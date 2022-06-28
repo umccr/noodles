@@ -10,8 +10,10 @@ use std::{
     str::FromStr,
 };
 
+use serde::{Serialize, Deserialize};
+
 /// A 1-based position.
-#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize, Deserialize)]
 pub struct Position(NonZeroUsize);
 
 impl Position {

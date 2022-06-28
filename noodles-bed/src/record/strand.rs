@@ -2,8 +2,10 @@
 
 use std::{error, fmt, str::FromStr};
 
+use serde::{Deserialize, Serialize};
+
 /// A BED record feature strand.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub enum Strand {
     /// Forward (sense or coding) strand (`+`).
     Forward,

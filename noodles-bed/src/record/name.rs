@@ -2,10 +2,12 @@
 
 use std::{error, fmt, ops::Deref, str::FromStr};
 
+use serde::{Deserialize, Serialize};
+
 const MAX_LENGTH: usize = 255;
 
 /// A BED record name.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct Name(String);
 
 impl Deref for Name {

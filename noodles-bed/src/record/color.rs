@@ -2,12 +2,14 @@
 
 use std::{error, fmt, num, str::FromStr};
 
+use serde::{Deserialize, Serialize};
+
 const DELIMITER: char = ',';
 
 /// A BED record color.
 ///
 /// A color is represented as an RGB triplet, where each component ranges from 0 to 255, inclusive.
-#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
 pub struct Color {
     r: u8,
     g: u8,

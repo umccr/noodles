@@ -17,6 +17,7 @@ use std::{
 };
 
 use noodles_core::Position;
+use serde::{Deserialize, Serialize};
 
 const DELIMITER: char = '\t';
 const MISSING_STRING: &str = ".";
@@ -24,7 +25,7 @@ const MISSING_NUMBER: &str = "0";
 
 type Block = (usize, usize);
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 struct StandardFields {
     reference_sequence_name: String,
     start_position: Position,
@@ -59,7 +60,7 @@ impl StandardFields {
 }
 
 /// Raw BED record optional fields.
-#[derive(Clone, Debug, Default, Eq, PartialEq)]
+#[derive(Clone, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
 pub struct OptionalFields(Vec<String>);
 
 impl Deref for OptionalFields {
