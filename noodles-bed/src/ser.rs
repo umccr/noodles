@@ -29,11 +29,11 @@ pub fn to_string<T>(value: &T) -> Result<String>
 where
     T: Serialize,
 {
-    let mut Serializer = Serializer {
+    let mut serializer = Serializer {
         output: String::new(),
     };
-    value.serialize(&mut Serializer)?;
-    Ok(Serializer.output)
+    value.serialize(&mut serializer)?;
+    Ok(serializer.output)
 }
 
 impl<'a> ser::Serializer for &'a mut Serializer {
@@ -511,47 +511,71 @@ impl<'a> ser::SerializeStructVariant for &'a mut Serializer {
     }
 }
 
-////////////////////////////////////////////////////////////////////////////////
+#[cfg(test)]
+mod tests {
+    use super::*;
 
-#[test]
-fn test_struct() {
-    #[derive(Serialize)]
-    struct Test {
-        int: u32,
-        seq: Vec<&'static str>,
+    #[test]
+    fn test_struct() {
+        #[derive(Serialize)]
+        struct Test {
+            int: u32,
+            seq: Vec<&'static str>,
+        }
+
+        let test = Test {
+            int: 1,
+            seq: vec!["a", "b"],
+        };
+        let expected = r#"{"int":1,"seq":["a","b"]}"#;
+        assert_eq!(to_string(&test).unwrap(), expected);
     }
 
-    let test = Test {
-        int: 1,
-        seq: vec!["a", "b"],
-    };
-    let expected = r#"{"int":1,"seq":["a","b"]}"#;
-    assert_eq!(to_string(&test).unwrap(), expected);
-}
+    #[test]
+    fn test_enum() {
+        #[derive(Serialize)]
+        enum E {
+            Unit,
+            Newtype(u32),
+            Tuple(u32, u32),
+            Struct { a: u32 },
+        }
 
-#[test]
-fn test_enum() {
-    #[derive(Serialize)]
-    enum E {
-        Unit,
-        Newtype(u32),
-        Tuple(u32, u32),
-        Struct { a: u32 },
+        let u = E::Unit;
+        let expected = r#""Unit""#;
+        assert_eq!(to_string(&u).unwrap(), expected);
+
+        let n = E::Newtype(1);
+        let expected = r#"{"Newtype":1}"#;
+        assert_eq!(to_string(&n).unwrap(), expected);
+
+        let t = E::Tuple(1, 2);
+        let expected = r#"{"Tuple":[1,2]}"#;
+        assert_eq!(to_string(&t).unwrap(), expected);
+
+        let s = E::Struct { a: 1 };
+        let expected = r#"{"Struct":{"a":1}}"#;
+        assert_eq!(to_string(&s).unwrap(), expected);
     }
 
-    let u = E::Unit;
-    let expected = r#""Unit""#;
-    assert_eq!(to_string(&u).unwrap(), expected);
+    #[test]
+    fn test_bed_serialization() {
+        // This doesn't sound like the correct place for this test
+        //    (code smell from importing stuff not defined here?)
+        //    (maybe there is an easier way to build).
+        use noodles_core::Position;
 
-    let n = E::Newtype(1);
-    let expected = r#"{"Newtype":1}"#;
-    assert_eq!(to_string(&n).unwrap(), expected);
+        // wait how come am i not testing deserialization aswell
+        let record = Record::<3>::builder()
+            .set_reference_sequence_name("sq0")
+            .set_start_position(Position::try_from(8).expect("Failed to create position"))
+            .set_end_position(Position::try_from(13).expect("Failed to create position"))
+            .build()
+            .expect("Failed to build bed record");
 
-    let t = E::Tuple(1, 2);
-    let expected = r#"{"Tuple":[1,2]}"#;
-    assert_eq!(to_string(&t).unwrap(), expected);
+        let expected = r#"{"chrom":"sq0","start":8,"end":13}"#;
 
-    let s = E::Struct { a: 1 };
-    let expected = r#"{"Struct":{"a":1}}"#;
-    assert_eq!(to_string(&s).unwrap(), expected);
+        assert_eq!(to_string(&record).unwrap(), expected)
+    }
+
 }
