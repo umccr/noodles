@@ -1,31 +1,44 @@
-use serde::{ser, Serialize};
+use serde::{ser::{self, SerializeStruct}, Serialize};
 
-use crate::error::{Error, Result};
+use crate::{error::{Error, Result}, Record};
 
 pub struct Serializer {
     // This string starts empty and JSON is appended as values are serialized.
     output: String,
 }
 
-// By convention, the public API of a Serde serializer is one or more `to_abc`
+impl Serialize for Record<3> {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        let mut state = serializer.serialize_struct("Record", 3)?;
+        state.serialize_field("chrom", &self.reference_sequence_name())?;
+        state.serialize_field("start", &self.start_position())?;
+        state.serialize_field("end", &self.end_position())?;
+        state.end()
+    }
+}
+
+// By convention, the public API of a Serde Serializer is one or more `to_abc`
 // functions such as `to_string`, `to_bytes`, or `to_writer` depending on what
-// Rust types the serializer is able to produce as output.
+// Rust types the Serializer is able to produce as output.
 //
-// This basic serializer supports only `to_string`.
+// This basic Serializer supports only `to_string`.
 pub fn to_string<T>(value: &T) -> Result<String>
 where
     T: Serialize,
 {
-    let mut serializer = Serializer {
+    let mut Serializer = Serializer {
         output: String::new(),
     };
-    value.serialize(&mut serializer)?;
-    Ok(serializer.output)
+    value.serialize(&mut Serializer)?;
+    Ok(Serializer.output)
 }
 
 impl<'a> ser::Serializer for &'a mut Serializer {
     // The output type produced by this `Serializer` during successful
-    // serialization. Most serializers that produce text or binary output should
+    // serialization. Most Serializers that produce text or binary output should
     // set `Ok = ()` and serialize into an `io::Write` or buffer contained
     // within the `Serializer` instance, as happens here. Serializers that build
     // in-memory data structures may be simplified by using `Ok` to propagate
@@ -120,16 +133,23 @@ impl<'a> ser::Serializer for &'a mut Serializer {
         Ok(())
     }
 
+    // // Serialize a byte array as an array of bytes. Could also use a base64
+    // // string here. Binary formats will typically represent byte arrays more
+    // // compactly.
+    // fn serialize_bytes(self, v: &[u8]) -> Result<()> {
+    //     use serde::ser::SerializeSeq;
+    //     let mut seq = self.serialize_seq(Some(v.len()))?;
+    //     for byte in v {
+    //         seq.serialize_element(byte)?;
+    //     }
+    //     seq.end()
+    // }
+
     // Serialize a byte array as an array of bytes. Could also use a base64
     // string here. Binary formats will typically represent byte arrays more
     // compactly.
     fn serialize_bytes(self, v: &[u8]) -> Result<()> {
-        use serde::ser::SerializeSeq;
-        let mut seq = self.serialize_seq(Some(v.len()))?;
-        for byte in v {
-            seq.serialize_element(byte)?;
-        }
-        seq.end()
+        unimplemented!();
     }
 
     // An absent optional is represented as the JSON `null`.
@@ -176,7 +196,7 @@ impl<'a> ser::Serializer for &'a mut Serializer {
         self.serialize_str(variant)
     }
 
-    // As is done here, serializers are encouraged to treat newtype structs as
+    // As is done here, Serializers are encouraged to treat newtype structs as
     // insignificant wrappers around the data they contain.
     fn serialize_newtype_struct<T>(
         self,
@@ -220,7 +240,7 @@ impl<'a> ser::Serializer for &'a mut Serializer {
     //
     // The length of the sequence may or may not be known ahead of time. This
     // doesn't make a difference in JSON because the length is not represented
-    // explicitly in the serialized form. Some serializers may only be able to
+    // explicitly in the serialized form. Some Serializers may only be able to
     // support sequences for which the length is known up front.
     fn serialize_seq(self, _len: Option<usize>) -> Result<Self::SerializeSeq> {
         self.output += "[";
@@ -302,9 +322,9 @@ impl<'a> ser::Serializer for &'a mut Serializer {
 // This impl is SerializeSeq so these methods are called after `serialize_seq`
 // is called on the Serializer.
 impl<'a> ser::SerializeSeq for &'a mut Serializer {
-    // Must match the `Ok` type of the serializer.
+    // Must match the `Ok` type of the Serializer.
     type Ok = ();
-    // Must match the `Error` type of the serializer.
+    // Must match the `Error` type of the Serializer.
     type Error = Error;
 
     // Serialize a single element of the sequence.
@@ -401,7 +421,7 @@ impl<'a> ser::SerializeTupleVariant for &'a mut Serializer {
 // `serialize_key` and `serialize_value` individually.
 //
 // There is a third optional method on the `SerializeMap` trait. The
-// `serialize_entry` method allows serializers to optimize for the case where
+// `serialize_entry` method allows Serializers to optimize for the case where
 // key and value are both available simultaneously. In JSON it doesn't make a
 // difference so the default behavior for `serialize_entry` is fine.
 impl<'a> ser::SerializeMap for &'a mut Serializer {
@@ -412,9 +432,9 @@ impl<'a> ser::SerializeMap for &'a mut Serializer {
     // only allows string keys so the implementation below will produce invalid
     // JSON if the key serializes as something other than a string.
     //
-    // A real JSON serializer would need to validate that map keys are strings.
+    // A real JSON Serializer would need to validate that map keys are strings.
     // This can be done by using a different Serializer to serialize the key
-    // (instead of `&mut **self`) and having that other serializer only
+    // (instead of `&mut **self`) and having that other Serializer only
     // implement `serialize_str` and return an error on any other data type.
     fn serialize_key<T>(&mut self, key: &T) -> Result<()>
     where
