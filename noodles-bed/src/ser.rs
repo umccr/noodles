@@ -512,7 +512,7 @@ impl<'a> ser::SerializeStructVariant for &'a mut Serializer {
 }
 
 #[cfg(test)]
-mod tests {
+mod serde_tests {
     use super::*;
 
     #[test]
@@ -559,7 +559,7 @@ mod tests {
     }
 
     #[test]
-    fn test_bed_serialization() {
+    fn test_bed_single_serialization() {
         // This doesn't sound like the correct place for this test
         //    (code smell from importing stuff not defined here?)
         //    (maybe there is an easier way to build).
@@ -576,6 +576,35 @@ mod tests {
         let expected = r#"{"chrom":"sq0","start":8,"end":13}"#;
 
         assert_eq!(to_string(&record).unwrap(), expected)
+    }
+
+    #[test]
+    fn test_bed_vec_serialization() {
+        // This doesn't sound like the correct place for this test
+        //    (code smell from importing stuff not defined here?)
+        //    (maybe there is an easier way to build).
+        use noodles_core::Position;
+
+        // wait how come am i not testing deserialization aswell
+        let record1 = Record::<3>::builder()
+            .set_reference_sequence_name("sq0")
+            .set_start_position(Position::try_from(8).expect("Failed to create position"))
+            .set_end_position(Position::try_from(13).expect("Failed to create position"))
+            .build()
+            .expect("Failed to build bed record");
+
+        let record2 = Record::<3>::builder()
+            .set_reference_sequence_name("sq1")
+            .set_start_position(Position::try_from(14).expect("Failed to create position"))
+            .set_end_position(Position::try_from(18).expect("Failed to create position"))
+            .build()
+            .expect("Failed to build bed record");
+
+        let input = vec![record1, record2];
+
+        let expected = r#"[{"chrom":"sq0","start":8,"end":13},{"chrom":"sq1","start":14,"end":18}]"#;
+
+        assert_eq!(to_string(&input).unwrap(), expected)
     }
 
 }

@@ -816,45 +816,102 @@ impl<'de, 'a> VariantAccess<'de> for Enum<'a, 'de> {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-#[test]
-fn test_de_struct() {
-    #[derive(Deserialize, PartialEq, Debug)]
-    struct Test {
-        int: u32,
-        seq: Vec<String>,
+
+#[cfg(test)]
+mod serde_tests {
+    use super::*;
+
+    #[test]
+    fn test_de_struct() {
+        #[derive(Deserialize, PartialEq, Debug)]
+        struct Test {
+            int: u32,
+            seq: Vec<String>,
+        }
+
+        let j = r#"{"int":1,"seq":["a","b"]}"#;
+        let expected = Test {
+            int: 1,
+            seq: vec!["a".to_owned(), "b".to_owned()],
+        };
+        assert_eq!(expected, from_str(j).unwrap());
     }
 
-    let j = r#"{"int":1,"seq":["a","b"]}"#;
-    let expected = Test {
-        int: 1,
-        seq: vec!["a".to_owned(), "b".to_owned()],
-    };
-    assert_eq!(expected, from_str(j).unwrap());
-}
+    #[test]
+    fn test_de_enum() {
+        #[derive(Deserialize, PartialEq, Debug)]
+        enum E {
+            Unit,
+            Newtype(u32),
+            Tuple(u32, u32),
+            Struct { a: u32 },
+        }
 
-#[test]
-fn test_de_enum() {
-    #[derive(Deserialize, PartialEq, Debug)]
-    enum E {
-        Unit,
-        Newtype(u32),
-        Tuple(u32, u32),
-        Struct { a: u32 },
+        let j = r#""Unit""#;
+        let expected = E::Unit;
+        assert_eq!(expected, from_str(j).unwrap());
+
+        let j = r#"{"Newtype":1}"#;
+        let expected = E::Newtype(1);
+        assert_eq!(expected, from_str(j).unwrap());
+
+        let j = r#"{"Tuple":[1,2]}"#;
+        let expected = E::Tuple(1, 2);
+        assert_eq!(expected, from_str(j).unwrap());
+
+        let j = r#"{"Struct":{"a":1}}"#;
+        let expected = E::Struct { a: 1 };
+        assert_eq!(expected, from_str(j).unwrap());
     }
 
-    let j = r#""Unit""#;
-    let expected = E::Unit;
-    assert_eq!(expected, from_str(j).unwrap());
+    #[test]
+    fn test_bed_single_deserialization() {
+        // This doesn't sound like the correct place for this test
+        //    (code smell from importing stuff not defined here?)
+        //    (maybe there is an easier way to build).
+        use noodles_core::Position;
 
-    let j = r#"{"Newtype":1}"#;
-    let expected = E::Newtype(1);
-    assert_eq!(expected, from_str(j).unwrap());
+        let input = r#"{"chrom":"sq0","start":8,"end":13}"#;
+        let result: Record::<3> = from_str(input).unwrap();
 
-    let j = r#"{"Tuple":[1,2]}"#;
-    let expected = E::Tuple(1, 2);
-    assert_eq!(expected, from_str(j).unwrap());
+        let expected = Record::<3>::builder()
+            .set_reference_sequence_name("sq0")
+            .set_start_position(Position::try_from(8).expect("Failed to create position"))
+            .set_end_position(Position::try_from(13).expect("Failed to create position"))
+            .build()
+            .expect("Failed to build bed record");
 
-    let j = r#"{"Struct":{"a":1}}"#;
-    let expected = E::Struct { a: 1 };
-    assert_eq!(expected, from_str(j).unwrap());
+        assert_eq!(result, expected)
+    }
+
+    #[test]
+    fn test_bed_vec_deserialization() {
+        // This doesn't sound like the correct place for this test
+        //    (code smell from importing stuff not defined here?)
+        //    (maybe there is an easier way to build).
+        use noodles_core::Position;
+
+        let input = r#"[{"chrom":"sq0","start":8,"end":13},{"chrom":"sq1","start":14,"end":18}]"#;
+        let result: Vec<Record::<3>> = from_str(input).unwrap();
+
+        // wait how come am i not testing deserialization aswell
+        let record1 = Record::<3>::builder()
+            .set_reference_sequence_name("sq0")
+            .set_start_position(Position::try_from(8).expect("Failed to create position"))
+            .set_end_position(Position::try_from(13).expect("Failed to create position"))
+            .build()
+            .expect("Failed to build bed record");
+
+        let record2 = Record::<3>::builder()
+            .set_reference_sequence_name("sq1")
+            .set_start_position(Position::try_from(14).expect("Failed to create position"))
+            .set_end_position(Position::try_from(18).expect("Failed to create position"))
+            .build()
+            .expect("Failed to build bed record");
+
+        let expected = vec![record1, record2];
+
+        assert_eq!(result, expected)
+    }
+
 }
