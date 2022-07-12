@@ -958,4 +958,38 @@ mod serde_tests {
         assert_eq!(result, expected)
     }
 
+    #[test]
+    #[ignore]
+    fn test_bed_deserialization_with_whitespaces() {
+        // This test currently fails, but probably should be fixed at some point
+
+        use noodles_core::Position;
+
+        // '\n', '\t' and ' '
+        let input = r#"[
+            {"chrom": "sq0","start": 8,		"end": 13},
+            {"chrom": "sq1","start": 14,	"end": 18}
+        ]"#;
+        let result: Vec<Record::<3>> = from_str(input).unwrap();
+
+        // wait how come am i not testing deserialization aswell
+        let record1 = Record::<3>::builder()
+            .set_reference_sequence_name("sq0")
+            .set_start_position(Position::try_from(8).expect("Failed to create position"))
+            .set_end_position(Position::try_from(13).expect("Failed to create position"))
+            .build()
+            .expect("Failed to build bed record");
+
+        let record2 = Record::<3>::builder()
+            .set_reference_sequence_name("sq1")
+            .set_start_position(Position::try_from(14).expect("Failed to create position"))
+            .set_end_position(Position::try_from(18).expect("Failed to create position"))
+            .build()
+            .expect("Failed to build bed record");
+
+        let expected = vec![record1, record2];
+
+        assert_eq!(result, expected)
+    }
+
 }
