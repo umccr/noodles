@@ -568,8 +568,8 @@ mod serde_tests {
         // wait how come am i not testing deserialization aswell
         let record = Record::<3>::builder()
             .set_reference_sequence_name("sq0")
-            .set_start_position(Position::try_from(8).expect("Failed to create position"))
-            .set_end_position(Position::try_from(13).expect("Failed to create position"))
+            .set_start_position(Position::try_from(8).unwrap())
+            .set_end_position(Position::try_from(13).unwrap())
             .build()
             .expect("Failed to build bed record");
 
@@ -588,15 +588,15 @@ mod serde_tests {
         // wait how come am i not testing deserialization aswell
         let record1 = Record::<3>::builder()
             .set_reference_sequence_name("sq0")
-            .set_start_position(Position::try_from(8).expect("Failed to create position"))
-            .set_end_position(Position::try_from(13).expect("Failed to create position"))
+            .set_start_position(Position::try_from(8).unwrap())
+            .set_end_position(Position::try_from(13).unwrap())
             .build()
             .expect("Failed to build bed record");
 
         let record2 = Record::<3>::builder()
             .set_reference_sequence_name("sq1")
-            .set_start_position(Position::try_from(14).expect("Failed to create position"))
-            .set_end_position(Position::try_from(18).expect("Failed to create position"))
+            .set_start_position(Position::try_from(14).unwrap())
+            .set_end_position(Position::try_from(18).unwrap())
             .build()
             .expect("Failed to build bed record");
 
