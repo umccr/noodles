@@ -121,16 +121,12 @@ impl<'de> Deserialize<'de> for Record<3> {
     }
 }
 
-pub fn from_reader<R>(reader: &mut Reader<R>) -> Vec<Record<3>>
+pub fn from_reader<R>(reader: &mut Reader<R>) -> std::result::Result<Vec<Record<3>>, std::io::Error>
 where
     R: BufRead
 {
     reader
         .records::<3>()
-        // fails silently, bad design
-        // TODO: define correct error handling for both of these maps
-        //     should we fail the whole operation if a single record fails?
-        .filter_map(|record| record.ok())
         .collect()
 }
 
@@ -155,7 +151,7 @@ mod tests {
 
         let expected = vec![record1];
 
-        assert_eq!(from_reader(&mut reader), expected)
+        assert_eq!(from_reader(&mut reader).unwrap(), expected)
     }
 
 }
@@ -863,6 +859,54 @@ mod serde_tests {
         let expected = E::Struct { a: 1 };
         assert_eq!(expected, from_str(j).unwrap());
     }
+
+    // this is way too similar to the test_bed_serialization
+    #[test]
+    fn test_from_reader_accept() {
+        // This doesn't sound like the correct place for this test
+        //    (code smell from importing stuff not defined here?)
+        //    (maybe there is an easier way to build).
+        use noodles_core::Position;
+        use crate::Reader;
+
+        let data = b"sq0\t7\t13\nsq0\t20\t34\n";
+        let mut reader = Reader::new(&data[..]);
+        let mut result = from_reader(&mut reader).unwrap();
+
+        // wait how come am i not testing deserialization aswell
+        let record1 = Record::<3>::builder()
+            .set_reference_sequence_name("sq0")
+            .set_start_position(Position::try_from(8).expect("Failed to create position"))
+            .set_end_position(Position::try_from(13).expect("Failed to create position"))
+            .build()
+            .expect("Failed to build bed record");
+
+        let record2 = Record::<3>::builder()
+            .set_reference_sequence_name("sq0")
+            .set_start_position(Position::try_from(21).expect("Failed to create position"))
+            .set_end_position(Position::try_from(34).expect("Failed to create position"))
+            .build()
+            .expect("Failed to build bed record");
+
+        let expected = vec![record1, record2];
+
+        assert_eq!(result, expected)
+    }
+
+    #[test]
+    fn test_from_reader_reject() {
+        // This doesn't sound like the correct place for this test
+        //    (code smell from importing stuff not defined here?)
+        //    (maybe there is an easier way to build).
+        use crate::Reader;
+
+        let invalid_data = b"sq0\t7\t13\nsq0\t20\n";
+        let mut reader = Reader::new(&invalid_data[..]);
+        let result = from_reader(&mut reader);
+
+        assert!(result.is_err())
+    }
+
 
     #[test]
     fn test_bed_single_deserialization() {
