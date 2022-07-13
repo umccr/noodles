@@ -148,7 +148,7 @@ impl<'a> ser::Serializer for &'a mut Serializer {
     // Serialize a byte array as an array of bytes. Could also use a base64
     // string here. Binary formats will typically represent byte arrays more
     // compactly.
-    fn serialize_bytes(self, v: &[u8]) -> Result<()> {
+    fn serialize_bytes(self, _v: &[u8]) -> Result<()> {
         unimplemented!();
     }
 
@@ -571,7 +571,7 @@ mod serde_tests {
             .set_start_position(Position::try_from(8).unwrap())
             .set_end_position(Position::try_from(13).unwrap())
             .build()
-            .expect("Failed to build bed record");
+            .unwrap();
 
         let expected = r#"{"chrom":"sq0","start":8,"end":13}"#;
 
@@ -591,14 +591,14 @@ mod serde_tests {
             .set_start_position(Position::try_from(8).unwrap())
             .set_end_position(Position::try_from(13).unwrap())
             .build()
-            .expect("Failed to build bed record");
+            .unwrap();
 
         let record2 = Record::<3>::builder()
             .set_reference_sequence_name("sq1")
             .set_start_position(Position::try_from(14).unwrap())
             .set_end_position(Position::try_from(18).unwrap())
             .build()
-            .expect("Failed to build bed record");
+            .unwrap();
 
         let input = vec![record1, record2];
 

@@ -1,7 +1,16 @@
 use std::fmt;
 use std::io::BufRead;
+use std::ops::{AddAssign, MulAssign, Neg};
 
-use crate::{Record, reader::Reader};
+use noodles_core::Position;
+
+use serde::Deserialize;
+use serde::de::{
+    self, DeserializeSeed, EnumAccess, IntoDeserializer, MapAccess, SeqAccess,
+    VariantAccess, Visitor,
+};
+
+use crate::{Record, reader::Reader, error::{Error, Result}};
 
 impl<'de> Deserialize<'de> for Record<3> {
     fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
@@ -54,13 +63,13 @@ impl<'de> Deserialize<'de> for Record<3> {
             where
                 V: SeqAccess<'de>,
             {
-                // TODO: review types used
                 let chrom: &str = seq.next_element()?
                     .ok_or_else(|| de::Error::invalid_length(0, &self))?;
                 let start: usize = seq.next_element()?
                     .ok_or_else(|| de::Error::invalid_length(1, &self))?;
                 let end: usize = seq.next_element()?
                     .ok_or_else(|| de::Error::invalid_length(2, &self))?;
+
                 // TODO: unwrap used in order to respect V::Error
                 //          need a way to convert builder error to remove unwraps
                 //          and resume returning error if needed?
@@ -100,7 +109,6 @@ impl<'de> Deserialize<'de> for Record<3> {
                         }
                     }
                 }
-                // TODO: review types used
                 let chrom: &str = chrom.ok_or_else(|| de::Error::missing_field("chrom"))?;
                 let start: usize = start.ok_or_else(|| de::Error::missing_field("start"))?;
                 let end: usize = end.ok_or_else(|| de::Error::missing_field("end"))?;
@@ -129,47 +137,6 @@ where
         .records::<3>()
         .collect()
 }
-
-
-#[cfg(test)]
-mod tests {
-    use noodles_core::Position;
-
-    use super::*;
-
-    #[test]
-    fn test_bed_deserialization() {
-        let data = b"sq0\t8\t13\n";
-        let mut reader = Reader::new(&data[..]);
-
-        let record1 = Record::<3>::builder()
-            .set_reference_sequence_name("sq0")
-            .set_start_position(Position::try_from(9).expect("Failed to create position"))
-            .set_end_position(Position::try_from(13).expect("Failed to create position"))
-            .build()
-            .expect("Failed to build bed record");
-
-        let expected = vec![record1];
-
-        assert_eq!(from_reader(&mut reader).unwrap(), expected)
-    }
-
-}
-
-
-// TODO : integrate code from the top and the bottom
-//     (currently separated to understand it better)
-
-use std::ops::{AddAssign, MulAssign, Neg};
-
-use noodles_core::Position;
-use serde::Deserialize;
-use serde::de::{
-    self, DeserializeSeed, EnumAccess, IntoDeserializer, MapAccess, SeqAccess,
-    VariantAccess, Visitor,
-};
-
-use crate::error::{Error, Result};
 
 pub struct Deserializer<'de> {
     // This string starts with the input data and characters are truncated off
@@ -243,7 +210,10 @@ impl<'de> Deserializer<'de> {
     where
         T: AddAssign<T> + MulAssign<T> + From<u8>,
     {
-        let mut int = match self.next_char()? {
+        let aux = self.next_char()?;
+        dbg!(&aux);
+
+        let mut int = match aux {
             ch @ '0'..='9' => T::from(ch as u8 - b'0'),
             _ => {
                 return Err(Error::ExpectedInteger);
@@ -302,6 +272,7 @@ impl<'de, 'a> de::Deserializer<'de> for &'a mut Deserializer<'de> {
     where
         V: Visitor<'de>,
     {
+        dbg!(&self.peek_char()?);
         match self.peek_char()? {
             'n' => self.deserialize_unit(visitor),
             't' | 'f' => self.deserialize_bool(visitor),
@@ -810,13 +781,13 @@ impl<'de, 'a> VariantAccess<'de> for Enum<'a, 'de> {
     }
 }
 
-////////////////////////////////////////////////////////////////////////////////
-
 
 #[cfg(test)]
 mod serde_tests {
     use super::*;
-
+    use noodles_core::Position;
+    use crate::Reader;
+    
     #[test]
     fn test_de_struct() {
         #[derive(Deserialize, PartialEq, Debug)]
@@ -859,34 +830,26 @@ mod serde_tests {
         let expected = E::Struct { a: 1 };
         assert_eq!(expected, from_str(j).unwrap());
     }
-
-    // this is way too similar to the test_bed_serialization
+    
     #[test]
     fn test_from_reader_accept() {
-        // This doesn't sound like the correct place for this test
-        //    (code smell from importing stuff not defined here?)
-        //    (maybe there is an easier way to build).
-        use noodles_core::Position;
-        use crate::Reader;
-
         let data = b"sq0\t7\t13\nsq0\t20\t34\n";
         let mut reader = Reader::new(&data[..]);
-        let mut result = from_reader(&mut reader).unwrap();
+        let result = from_reader(&mut reader).unwrap();
 
-        // wait how come am i not testing deserialization aswell
         let record1 = Record::<3>::builder()
             .set_reference_sequence_name("sq0")
-            .set_start_position(Position::try_from(8).expect("Failed to create position"))
-            .set_end_position(Position::try_from(13).expect("Failed to create position"))
+            .set_start_position(Position::try_from(8).unwrap())
+            .set_end_position(Position::try_from(13).unwrap())
             .build()
-            .expect("Failed to build bed record");
+            .unwrap();
 
         let record2 = Record::<3>::builder()
             .set_reference_sequence_name("sq0")
-            .set_start_position(Position::try_from(21).expect("Failed to create position"))
-            .set_end_position(Position::try_from(34).expect("Failed to create position"))
+            .set_start_position(Position::try_from(21).unwrap())
+            .set_end_position(Position::try_from(34).unwrap())
             .build()
-            .expect("Failed to build bed record");
+            .unwrap();
 
         let expected = vec![record1, record2];
 
@@ -895,11 +858,6 @@ mod serde_tests {
 
     #[test]
     fn test_from_reader_reject() {
-        // This doesn't sound like the correct place for this test
-        //    (code smell from importing stuff not defined here?)
-        //    (maybe there is an easier way to build).
-        use crate::Reader;
-
         let invalid_data = b"sq0\t7\t13\nsq0\t20\n";
         let mut reader = Reader::new(&invalid_data[..]);
         let result = from_reader(&mut reader);
@@ -910,48 +868,37 @@ mod serde_tests {
 
     #[test]
     fn test_bed_single_deserialization() {
-        // This doesn't sound like the correct place for this test
-        //    (code smell from importing stuff not defined here?)
-        //    (maybe there is an easier way to build).
-        use noodles_core::Position;
-
         let input = r#"{"chrom":"sq0","start":8,"end":13}"#;
         let result: Record::<3> = from_str(input).unwrap();
 
         let expected = Record::<3>::builder()
             .set_reference_sequence_name("sq0")
-            .set_start_position(Position::try_from(8).expect("Failed to create position"))
-            .set_end_position(Position::try_from(13).expect("Failed to create position"))
+            .set_start_position(Position::try_from(8).unwrap())
+            .set_end_position(Position::try_from(13).unwrap())
             .build()
-            .expect("Failed to build bed record");
+            .unwrap();
 
         assert_eq!(result, expected)
     }
 
     #[test]
     fn test_bed_vec_deserialization() {
-        // This doesn't sound like the correct place for this test
-        //    (code smell from importing stuff not defined here?)
-        //    (maybe there is an easier way to build).
-        use noodles_core::Position;
-
         let input = r#"[{"chrom":"sq0","start":8,"end":13},{"chrom":"sq1","start":14,"end":18}]"#;
         let result: Vec<Record::<3>> = from_str(input).unwrap();
 
-        // wait how come am i not testing deserialization aswell
         let record1 = Record::<3>::builder()
             .set_reference_sequence_name("sq0")
-            .set_start_position(Position::try_from(8).expect("Failed to create position"))
-            .set_end_position(Position::try_from(13).expect("Failed to create position"))
+            .set_start_position(Position::try_from(8).unwrap())
+            .set_end_position(Position::try_from(13).unwrap())
             .build()
-            .expect("Failed to build bed record");
+            .unwrap();
 
         let record2 = Record::<3>::builder()
             .set_reference_sequence_name("sq1")
-            .set_start_position(Position::try_from(14).expect("Failed to create position"))
-            .set_end_position(Position::try_from(18).expect("Failed to create position"))
+            .set_start_position(Position::try_from(14).unwrap())
+            .set_end_position(Position::try_from(18).unwrap())
             .build()
-            .expect("Failed to build bed record");
+            .unwrap();
 
         let expected = vec![record1, record2];
 
@@ -963,8 +910,6 @@ mod serde_tests {
     fn test_bed_deserialization_with_whitespaces() {
         // This test currently fails, but probably should be fixed at some point
 
-        use noodles_core::Position;
-
         // '\n', '\t' and ' '
         let input = r#"[
             {"chrom": "sq0","start": 8,		"end": 13},
@@ -972,20 +917,19 @@ mod serde_tests {
         ]"#;
         let result: Vec<Record::<3>> = from_str(input).unwrap();
 
-        // wait how come am i not testing deserialization aswell
         let record1 = Record::<3>::builder()
             .set_reference_sequence_name("sq0")
-            .set_start_position(Position::try_from(8).expect("Failed to create position"))
-            .set_end_position(Position::try_from(13).expect("Failed to create position"))
+            .set_start_position(Position::try_from(8).unwrap())
+            .set_end_position(Position::try_from(13).unwrap())
             .build()
-            .expect("Failed to build bed record");
+            .unwrap();
 
         let record2 = Record::<3>::builder()
             .set_reference_sequence_name("sq1")
-            .set_start_position(Position::try_from(14).expect("Failed to create position"))
-            .set_end_position(Position::try_from(18).expect("Failed to create position"))
+            .set_start_position(Position::try_from(14).unwrap())
+            .set_end_position(Position::try_from(18).unwrap())
             .build()
-            .expect("Failed to build bed record");
+            .unwrap();
 
         let expected = vec![record1, record2];
 
