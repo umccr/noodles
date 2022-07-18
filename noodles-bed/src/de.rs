@@ -70,14 +70,11 @@ impl<'de> Deserialize<'de> for Record<3> {
                 let end: usize = seq.next_element()?
                     .ok_or_else(|| de::Error::invalid_length(2, &self))?;
 
-                // TODO: unwrap used in order to respect V::Error
-                //          need a way to convert builder error to remove unwraps
-                //          and resume returning error if needed?
-                Ok(Record::<3>::builder()
+                Record::<3>::builder()
                     .set_reference_sequence_name(chrom)
-                    .set_start_position(Position::try_from(start).unwrap())
-                    .set_end_position(Position::try_from(end).unwrap())
-                    .build().unwrap())
+                    .set_start_position(Position::try_from(start).map_err(|err| de::Error::custom(err))?)
+                    .set_end_position(Position::try_from(end).map_err(|err| de::Error::custom(err))?)
+                    .build().map_err(|err| de::Error::custom(err))
             }
 
             fn visit_map<V>(self, mut map: V) -> std::result::Result<Record<3>, V::Error>
@@ -113,14 +110,11 @@ impl<'de> Deserialize<'de> for Record<3> {
                 let start: usize = start.ok_or_else(|| de::Error::missing_field("start"))?;
                 let end: usize = end.ok_or_else(|| de::Error::missing_field("end"))?;
 
-                // TODO: unwrap used in order to respect V::Error
-                //          need a way to convert builder error to remove unwraps
-                //          and resume returning error if needed?
-                Ok(Record::<3>::builder()
+                Record::<3>::builder()
                     .set_reference_sequence_name(chrom)
-                    .set_start_position(Position::try_from(start).unwrap())
-                    .set_end_position(Position::try_from(end).unwrap())
-                    .build().unwrap())
+                    .set_start_position(Position::try_from(start).map_err(|err| de::Error::custom(err))?)
+                    .set_end_position(Position::try_from(end).map_err(|err| de::Error::custom(err))?)
+                    .build().map_err(|err| de::Error::custom(err))
             }
         }
 
