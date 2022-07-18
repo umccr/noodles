@@ -12,113 +12,114 @@ use serde::de::{
 
 use crate::{Record, reader::Reader, error::{Error, Result}};
 
+const FIELDS: &'static [&'static str] = &["chrom", "start", "end"];
+enum Field { Chrom, Start, End }
+struct Record3Visitor;
+
+
+impl<'de> Deserialize<'de> for Field {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Field, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        struct FieldVisitor;
+
+        impl<'de> Visitor<'de> for FieldVisitor {
+            type Value = Field;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                formatter.write_str("`chrom`, `start` or `end`")
+            }
+
+            fn visit_str<E>(self, value: &str) -> std::result::Result<Field, E>
+            where
+                E: de::Error,
+            {
+                match value {
+                    "chrom" => Ok(Field::Chrom),
+                    "start" => Ok(Field::Start),
+                    "end" => Ok(Field::End),
+                    _ => Err(de::Error::unknown_field(value, FIELDS)),
+                }
+            }
+        }
+
+        deserializer.deserialize_identifier(FieldVisitor)
+    }
+}
+
+impl<'de> Visitor<'de> for Record3Visitor {
+    type Value = Record<3>;
+
+    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        formatter.write_str("struct Record<3>")
+    }
+
+    fn visit_seq<V>(self, mut seq: V) -> std::result::Result<Record<3>, V::Error>
+    where
+        V: SeqAccess<'de>,
+    {
+        let chrom: &str = seq.next_element()?
+            .ok_or_else(|| de::Error::invalid_length(0, &self))?;
+        let start: usize = seq.next_element()?
+            .ok_or_else(|| de::Error::invalid_length(1, &self))?;
+        let end: usize = seq.next_element()?
+            .ok_or_else(|| de::Error::invalid_length(2, &self))?;
+
+        Record::<3>::builder()
+            .set_reference_sequence_name(chrom)
+            .set_start_position(Position::try_from(start).map_err(|err| de::Error::custom(err))?)
+            .set_end_position(Position::try_from(end).map_err(|err| de::Error::custom(err))?)
+            .build().map_err(|err| de::Error::custom(err))
+    }
+
+    fn visit_map<V>(self, mut map: V) -> std::result::Result<Record<3>, V::Error>
+    where
+        V: MapAccess<'de>,
+    {
+        let mut chrom = None;
+        let mut start = None;
+        let mut end = None;
+        while let Some(key) = map.next_key()? {
+            match key {
+                Field::Chrom => {
+                    if chrom.is_some() {
+                        return Err(de::Error::duplicate_field("chrom"));
+                    }
+                    chrom = Some(map.next_value()?);
+                }
+                Field::Start => {
+                    if start.is_some() {
+                        return Err(de::Error::duplicate_field("start"));
+                    }
+                    start = Some(map.next_value()?);
+                }
+                Field::End => {
+                    if end.is_some() {
+                        return Err(de::Error::duplicate_field("end"));
+                    }
+                    end = Some(map.next_value()?);
+                }
+            }
+        }
+        let chrom: &str = chrom.ok_or_else(|| de::Error::missing_field("chrom"))?;
+        let start: usize = start.ok_or_else(|| de::Error::missing_field("start"))?;
+        let end: usize = end.ok_or_else(|| de::Error::missing_field("end"))?;
+
+        Record::<3>::builder()
+            .set_reference_sequence_name(chrom)
+            .set_start_position(Position::try_from(start).map_err(|err| de::Error::custom(err))?)
+            .set_end_position(Position::try_from(end).map_err(|err| de::Error::custom(err))?)
+            .build().map_err(|err| de::Error::custom(err))
+    }
+}
+
+
 impl<'de> Deserialize<'de> for Record<3> {
     fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
     where
         D: serde::Deserializer<'de>,
     {
-        enum Field { Chrom, Start, End }
-
-        impl<'de> Deserialize<'de> for Field {
-            fn deserialize<D>(deserializer: D) -> std::result::Result<Field, D::Error>
-            where
-                D: serde::Deserializer<'de>,
-            {
-                struct FieldVisitor;
-
-                impl<'de> Visitor<'de> for FieldVisitor {
-                    type Value = Field;
-
-                    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-                        formatter.write_str("`chrom`, `start` or `end`")
-                    }
-
-                    fn visit_str<E>(self, value: &str) -> std::result::Result<Field, E>
-                    where
-                        E: de::Error,
-                    {
-                        match value {
-                            "chrom" => Ok(Field::Chrom),
-                            "start" => Ok(Field::Start),
-                            "end" => Ok(Field::End),
-                            _ => Err(de::Error::unknown_field(value, FIELDS)),
-                        }
-                    }
-                }
-
-                deserializer.deserialize_identifier(FieldVisitor)
-            }
-        }
-
-        struct Record3Visitor;
-
-        impl<'de> Visitor<'de> for Record3Visitor {
-            type Value = Record<3>;
-
-            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-                formatter.write_str("struct Record<3>")
-            }
-
-            fn visit_seq<V>(self, mut seq: V) -> std::result::Result<Record<3>, V::Error>
-            where
-                V: SeqAccess<'de>,
-            {
-                let chrom: &str = seq.next_element()?
-                    .ok_or_else(|| de::Error::invalid_length(0, &self))?;
-                let start: usize = seq.next_element()?
-                    .ok_or_else(|| de::Error::invalid_length(1, &self))?;
-                let end: usize = seq.next_element()?
-                    .ok_or_else(|| de::Error::invalid_length(2, &self))?;
-
-                Record::<3>::builder()
-                    .set_reference_sequence_name(chrom)
-                    .set_start_position(Position::try_from(start).map_err(|err| de::Error::custom(err))?)
-                    .set_end_position(Position::try_from(end).map_err(|err| de::Error::custom(err))?)
-                    .build().map_err(|err| de::Error::custom(err))
-            }
-
-            fn visit_map<V>(self, mut map: V) -> std::result::Result<Record<3>, V::Error>
-            where
-                V: MapAccess<'de>,
-            {
-                let mut chrom = None;
-                let mut start = None;
-                let mut end = None;
-                while let Some(key) = map.next_key()? {
-                    match key {
-                        Field::Chrom => {
-                            if chrom.is_some() {
-                                return Err(de::Error::duplicate_field("chrom"));
-                            }
-                            chrom = Some(map.next_value()?);
-                        }
-                        Field::Start => {
-                            if start.is_some() {
-                                return Err(de::Error::duplicate_field("start"));
-                            }
-                            start = Some(map.next_value()?);
-                        }
-                        Field::End => {
-                            if end.is_some() {
-                                return Err(de::Error::duplicate_field("end"));
-                            }
-                            end = Some(map.next_value()?);
-                        }
-                    }
-                }
-                let chrom: &str = chrom.ok_or_else(|| de::Error::missing_field("chrom"))?;
-                let start: usize = start.ok_or_else(|| de::Error::missing_field("start"))?;
-                let end: usize = end.ok_or_else(|| de::Error::missing_field("end"))?;
-
-                Record::<3>::builder()
-                    .set_reference_sequence_name(chrom)
-                    .set_start_position(Position::try_from(start).map_err(|err| de::Error::custom(err))?)
-                    .set_end_position(Position::try_from(end).map_err(|err| de::Error::custom(err))?)
-                    .build().map_err(|err| de::Error::custom(err))
-            }
-        }
-
-        const FIELDS: &'static [&'static str] = &["chrom", "start", "end"];
         deserializer.deserialize_struct("Record", FIELDS, Record3Visitor)
     }
 }
