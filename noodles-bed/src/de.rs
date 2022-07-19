@@ -13,40 +13,43 @@ use serde::de::{
 use crate::{Record, reader::Reader, error::{Error, Result}};
 
 const FIELDS: &'static [&'static str] = &["chrom", "start", "end"];
+// const FIELDS: &'static [&'static str] = &["Chrom", "Start", "End"];
+
+#[derive(Deserialize, Debug)]
 enum Field { Chrom, Start, End }
 struct Record3Visitor;
 
 
-impl<'de> Deserialize<'de> for Field {
-    fn deserialize<D>(deserializer: D) -> std::result::Result<Field, D::Error>
-    where
-        D: serde::Deserializer<'de>,
-    {
-        struct FieldVisitor;
+// impl<'de> Deserialize<'de> for Field {
+//     fn deserialize<D>(deserializer: D) -> std::result::Result<Field, D::Error>
+//     where
+//         D: serde::Deserializer<'de>,
+//     {
+//         struct FieldVisitor;
 
-        impl<'de> Visitor<'de> for FieldVisitor {
-            type Value = Field;
+//         impl<'de> Visitor<'de> for FieldVisitor {
+//             type Value = Field;
 
-            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-                formatter.write_str("`chrom`, `start` or `end`")
-            }
+//             fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+//                 formatter.write_str("`chrom`, `start` or `end`")
+//             }
 
-            fn visit_str<E>(self, value: &str) -> std::result::Result<Field, E>
-            where
-                E: de::Error,
-            {
-                match value {
-                    "chrom" => Ok(Field::Chrom),
-                    "start" => Ok(Field::Start),
-                    "end" => Ok(Field::End),
-                    _ => Err(de::Error::unknown_field(value, FIELDS)),
-                }
-            }
-        }
+//             fn visit_str<E>(self, value: &str) -> std::result::Result<Field, E>
+//             where
+//                 E: de::Error,
+//             {
+//                 match value {
+//                     "chrom" => Ok(Field::Chrom),
+//                     "start" => Ok(Field::Start),
+//                     "end" => Ok(Field::End),
+//                     _ => Err(de::Error::unknown_field(value, FIELDS)),
+//                 }
+//             }
+//         }
 
-        deserializer.deserialize_identifier(FieldVisitor)
-    }
-}
+//         deserializer.deserialize_identifier(FieldVisitor)
+//     }
+// }
 
 impl<'de> Visitor<'de> for Record3Visitor {
     type Value = Record<3>;
@@ -863,6 +866,8 @@ mod serde_tests {
 
     #[test]
     fn test_bed_single_deserialization() {
+        // wow this works
+        // let input = r#"{"Chrom":"sq0","Start":8,"End":13}"#;
         let input = r#"{"chrom":"sq0","start":8,"end":13}"#;
         let result: Record::<3> = from_str(input).unwrap();
 
