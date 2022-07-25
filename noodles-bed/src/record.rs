@@ -27,16 +27,33 @@ type Block = (usize, usize);
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 struct StandardFields {
+    #[serde(rename = "chrom")]
     reference_sequence_name: String,
+    #[serde(rename = "start")]
     start_position: Position,
+    #[serde(rename = "end")]
     end_position: Position,
+    #[serde(default)]
     name: Option<Name>,
+    #[serde(default)]
     score: Option<Score>,
+    #[serde(default)]
     strand: Option<Strand>,
+    // Could use serde_state (https://docs.rs/serde_state/0.4.8/serde_state/index.html) to deserialize
+    // thick_start and thick_end with the same logic as the `new` function, as the value depends on
+    // start_position and end_position.
+    #[serde(default = "default_position")]
     thick_start: Position,
+    #[serde(default = "default_position")]
     thick_end: Position,
+    #[serde(default)]
     color: Option<Color>,
+    #[serde(default)]
     blocks: Vec<Block>,
+}
+
+fn default_position() -> Position {
+    Position::new(1).unwrap()
 }
 
 impl StandardFields {
@@ -111,7 +128,10 @@ mod optional_fields_tests {
 /// A BED record.
 #[derive(Clone, Debug, Eq, PartialEq, Deserialize, Serialize)]
 pub struct Record<const N: u8> {
+    #[serde(flatten)]
     standard_fields: StandardFields,
+    // Skip for now as we can't flatten this.
+    #[serde(skip)]
     optional_fields: OptionalFields,
 }
 

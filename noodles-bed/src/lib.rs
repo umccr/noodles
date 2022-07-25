@@ -6,7 +6,7 @@ mod reader;
 pub mod record;
 mod writer;
 
-pub use self::{reader::Reader, record::Record, writer::Writer}; 
+pub use self::{reader::Reader, record::Record, writer::Writer};
 
 // SerDe
 mod de;

@@ -9,7 +9,7 @@ pub type Result<T> = std::result::Result<T, Error>;
 
 #[derive(Debug)]
 pub enum Error {
-    Error(io::Error)
+    Error(io::Error),
 }
 
 impl ser::Error for Error {
@@ -27,7 +27,7 @@ impl de::Error for Error {
 impl Display for Error {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Error::Error(err) => formatter.write_str(&err.to_string())
+            Error::Error(err) => formatter.write_str(&err.to_string()),
         }
     }
 }
