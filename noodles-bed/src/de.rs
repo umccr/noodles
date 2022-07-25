@@ -63,21 +63,23 @@ where
         todo!()
     }
 
-    /// We will likely need to handle deserializing a struct.
-    fn deserialize_struct<V>(
-        self,
-        name: &'static str,
-        fields: &'static [&'static str],
-        visitor: V,
-    ) -> Result<V::Value>
+    /// We will likely need to handle deserializing a sequence.
+    fn deserialize_seq<V>(self, visitor: V) -> Result<V::Value>
     where
         V: Visitor<'de>,
     {
         visitor.visit_seq(self)
     }
 
-    /// And a sequence, in a similar way.
-    fn deserialize_seq<V>(self, visitor: V) -> Result<V::Value>
+    /// We also need to deserialize a struct in a similar way, as the BED
+    /// format doesn't have a concept of a struct. It just processes records
+    /// line by line similar to CSV, where fields are separated by some separator.
+    fn deserialize_struct<V>(
+        self,
+        name: &'static str,
+        fields: &'static [&'static str],
+        visitor: V,
+    ) -> Result<V::Value>
     where
         V: Visitor<'de>,
     {
