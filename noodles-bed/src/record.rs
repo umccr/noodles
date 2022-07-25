@@ -109,7 +109,7 @@ mod optional_fields_tests {
 }
 
 /// A BED record.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Deserialize, Serialize)]
 pub struct Record<const N: u8> {
     standard_fields: StandardFields,
     optional_fields: OptionalFields,

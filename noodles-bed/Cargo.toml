@@ -13,3 +13,4 @@ documentation = "https://docs.rs/noodles-bed"
 [dependencies]
 noodles-core = { path = "../noodles-core", version = "0.7.0" }
 serde = { version = "1" }
+serde_json = "1.0"
