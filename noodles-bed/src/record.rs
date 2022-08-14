@@ -1418,4 +1418,43 @@ mod tests {
 
         Ok(())
     }
+
+    #[test]
+    fn test_serde_json_from_str() -> Result<(), noodles_core::position::TryFromIntError> {
+        // TODO: solve thick_start and thick_end default on serde
+        //       (on the lib it uses start and end, we set up to be 1 for now.)
+        let actual: Record<3> = serde_json::from_str(
+            r#"{"chrom":"sq0","start":8,"end":13,"thick_start":8,"thick_end":13}"#,
+        )
+        .unwrap();
+
+        let expected = Record::<3>::builder()
+            .set_reference_sequence_name("sq0")
+            .set_start_position(Position::try_from(8).unwrap())
+            .set_end_position(Position::try_from(13).unwrap())
+            .build()
+            .unwrap();
+
+        assert_eq!(actual, expected);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_serde_json_to_string() -> Result<(), noodles_core::position::TryFromIntError> {
+        // TODO: solve thick_start and thick_end default on serde
+        //       (on the lib it uses start and end, we set up to be 1 for now.)
+        let record = Record::<3>::builder()
+            .set_reference_sequence_name("sq0")
+            .set_start_position(Position::new(8).unwrap())
+            .set_end_position(Position::new(13).unwrap())
+            .build()
+            .unwrap();
+
+        let expected = r#"{"chrom":"sq0","start":8,"end":13,"name":null,"score":null,"strand":null,"thick_start":8,"thick_end":13,"color":null,"blocks":[]}"#;
+
+        assert_eq!(serde_json::to_string(&record).unwrap(), expected);
+
+        Ok(())
+    }
 }
