@@ -25,6 +25,18 @@ const MISSING_NUMBER: &str = "0";
 
 type Block = (usize, usize);
 
+// TODO: move to appropriate place.
+
+use serde_with::{serde_as, DisplayFromStr};
+
+// TODO: impl Record<N>
+#[serde_as]
+#[derive(Deserialize, Serialize)]
+pub struct AuxiliarBedRecordWrapper {
+    #[serde_as(as = "DisplayFromStr")]
+    pub record: Record<3>,
+}
+
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 struct StandardFields {
     #[serde(rename = "chrom")]

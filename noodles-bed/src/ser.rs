@@ -312,7 +312,7 @@ impl<'a> ser::SerializeStruct for &'a mut Record3Serializer {
     }
 
     fn end(self) -> Result<()> {
-        self.output += "\t";
+        self.output += "\n";
         Ok(())
     }
 }
@@ -338,12 +338,12 @@ impl<'a> ser::SerializeStructVariant for &'a mut Record3Serializer {
 }
 #[cfg(test)]
 mod serde_tests {
-    use crate::Record;
+    use crate::{record::AuxiliarBedRecordWrapper, Record};
 
     use super::*;
 
     #[test]
-    fn test_to_string_single_record() {
+    fn test_to_string_single_auxiliar_bed_record_wrapper() {
         let record = Record::<3>::builder()
             .set_reference_sequence_name("sq0")
             .set_start_position(noodles_core::Position::try_from(8).unwrap())
@@ -351,20 +351,16 @@ mod serde_tests {
             .build()
             .unwrap();
 
-        let result = to_string(&record).unwrap();
+        let abrw = AuxiliarBedRecordWrapper { record };
 
-        // The last \t comes from blocks: []
-        // which was identified as a field, but doesn't write anything for now.
-        // It's an empty seq, which cannot be altered without
-        //  changing the behaviour for the other usage of Seq in this context
-        //  which is the test with many records below
-        let expected = "sq0\t8\t13\tnull\tnull\tnull\t8\t13\tnull\t\n";
+        let result = to_string(&abrw).unwrap();
+        let expected = "sq0\t7\t13\n";
 
         assert_eq!(&result, expected);
     }
 
     #[test]
-    fn test_to_string_vec_record() {
+    fn test_to_string_multiple_auxiliar_bed_record_wrapper() {
         let record1 = Record::<3>::builder()
             .set_reference_sequence_name("sq0")
             .set_start_position(noodles_core::Position::try_from(8).unwrap())
@@ -379,10 +375,12 @@ mod serde_tests {
             .build()
             .unwrap();
 
-        let input = vec![record1, record2];
+        let abrw1 = AuxiliarBedRecordWrapper { record: record1 };
+        let abrw2 = AuxiliarBedRecordWrapper { record: record2 };
+        let input = vec![abrw1, abrw2];
 
         let result = to_string(&input).unwrap();
-        let expected = "sq0\t8\t13\tnull\tnull\tnull\t8\t13\tnull\t\nsq1\t14\t18\tnull\tnull\tnull\t14\t18\tnull\t\n";
+        let expected = "sq0\t7\t13\nsq1\t13\t18\n";
         assert_eq!(&result, expected);
     }
 
