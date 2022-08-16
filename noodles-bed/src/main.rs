@@ -1,4 +1,4 @@
-use noodles_bed::{from_bytes, to_bytes, Record};
+use noodles_bed::Record;
 use noodles_core::Position;
 
 /// Demonstration of deserialization.
@@ -38,6 +38,6 @@ fn main() {
     // // maybe it should be possible to NOT borrow
     // println!("{:#?}", to_bytes(record).unwrap());
 
-    println!("{:#?}", noodles_bed::to_string(&record).unwrap());
-    println!("{:#?}", to_bytes(&record).unwrap());
+    println!("{:#?}", noodles_bed::record_to_string(record).unwrap());
+    // println!("{:#?}", to_bytes(&record).unwrap());
 }

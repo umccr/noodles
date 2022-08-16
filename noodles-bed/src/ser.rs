@@ -1,12 +1,17 @@
 use serde::{ser, Serialize};
 
-use crate::error::{Error, Result};
+use crate::{
+    error::{Error, Result},
+    record::AuxiliarBedRecordWrapper,
+    Record,
+};
 
 pub struct Record3Serializer {
     output: String,
 }
 
-pub fn to_string<T>(value: &T) -> Result<String>
+// I believe this function shouldn't be user facing
+fn to_string<T>(value: &T) -> Result<String>
 where
     T: Serialize,
 {
@@ -16,6 +21,21 @@ where
     };
     value.serialize(&mut serializer)?;
     Ok(serializer.output)
+}
+
+// And that we should restrict the types that have access to the to_string() inner function
+pub fn vec_record_to_string(vec: Vec<Record<3>>) -> Result<String> {
+    let input: Vec<AuxiliarBedRecordWrapper> = vec
+        .into_iter()
+        .map(|record| AuxiliarBedRecordWrapper { record })
+        .collect();
+
+    to_string(&input)
+}
+
+pub fn record_to_string(record: Record<3>) -> Result<String> {
+    let abrw = AuxiliarBedRecordWrapper { record };
+    to_string(&abrw)
 }
 
 pub fn to_bytes<T>(value: &T) -> Result<Vec<u8>>
@@ -338,7 +358,7 @@ impl<'a> ser::SerializeStructVariant for &'a mut Record3Serializer {
 }
 #[cfg(test)]
 mod serde_tests {
-    use crate::{record::AuxiliarBedRecordWrapper, Record};
+    use crate::Record;
 
     use super::*;
 
@@ -351,9 +371,7 @@ mod serde_tests {
             .build()
             .unwrap();
 
-        let abrw = AuxiliarBedRecordWrapper { record };
-
-        let result = to_string(&abrw).unwrap();
+        let result = record_to_string(record).unwrap();
         let expected = "sq0\t7\t13\n";
 
         assert_eq!(&result, expected);
@@ -375,11 +393,9 @@ mod serde_tests {
             .build()
             .unwrap();
 
-        let abrw1 = AuxiliarBedRecordWrapper { record: record1 };
-        let abrw2 = AuxiliarBedRecordWrapper { record: record2 };
-        let input = vec![abrw1, abrw2];
+        let input = vec![record1, record2];
 
-        let result = to_string(&input).unwrap();
+        let result = vec_record_to_string(input).unwrap();
         let expected = "sq0\t7\t13\nsq1\t13\t18\n";
         assert_eq!(&result, expected);
     }

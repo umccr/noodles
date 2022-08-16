@@ -15,4 +15,4 @@ mod ser;
 
 pub use de::{from_bytes, Record3Deserializer};
 pub use error::{Error, Result};
-pub use ser::{to_bytes, to_string, Record3Serializer};
+pub use ser::{record_to_string, to_bytes, vec_record_to_string, Record3Serializer};
