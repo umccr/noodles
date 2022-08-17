@@ -38,6 +38,6 @@ fn main() {
     // // maybe it should be possible to NOT borrow
     // println!("{:#?}", to_bytes(record).unwrap());
 
-    println!("{:#?}", noodles_bed::record_to_string(record).unwrap());
+    // println!("{:#?}", noodles_bed::record_to_string(record).unwrap());
     // println!("{:#?}", to_bytes(&record).unwrap());
 }
