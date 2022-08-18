@@ -2,7 +2,7 @@ use serde::{ser, Serialize};
 
 use crate::{
     error::{Error, Result},
-    record::{self, AuxiliarBedRecordWrapper},
+    record::AuxiliarBedRecordWrapper,
     Record,
 };
 
@@ -27,16 +27,14 @@ where
 pub fn vec_record_to_string(vec: Vec<Record<3>>) -> Result<String> {
     let input: Vec<AuxiliarBedRecordWrapper> = vec
         .into_iter()
-        .map(|record| AuxiliarBedRecordWrapper {
-            record: record::BedType::Wrapper3(record),
-        })
+        .map(|record| AuxiliarBedRecordWrapper { record })
         .collect();
 
     to_string(&input)
 }
 
-pub fn record_to_string(bed_type: record::BedType) -> Result<String> {
-    let abrw = AuxiliarBedRecordWrapper { record: bed_type };
+pub fn record_to_string(record: Record<3>) -> Result<String> {
+    let abrw = AuxiliarBedRecordWrapper { record };
     to_string(&abrw)
 }
 
@@ -360,10 +358,7 @@ impl<'a> ser::SerializeStructVariant for &'a mut Record3Serializer {
 }
 #[cfg(test)]
 mod serde_tests {
-    use crate::{
-        record::{BedType, Name},
-        Record,
-    };
+    use crate::Record;
 
     use super::*;
 
@@ -376,7 +371,7 @@ mod serde_tests {
             .build()
             .unwrap();
 
-        let result = record_to_string(BedType::Wrapper3(record)).unwrap();
+        let result = record_to_string(record).unwrap();
         let expected = "sq0\t7\t13\n";
 
         assert_eq!(&result, expected);
@@ -402,24 +397,6 @@ mod serde_tests {
 
         let result = vec_record_to_string(input).unwrap();
         let expected = "sq0\t7\t13\nsq1\t13\t18\n";
-        assert_eq!(&result, expected);
-    }
-
-    #[test]
-    fn test_to_string_single_auxiliar_bed_record_4_wrapper() {
-        let name: Name = "ndls1".parse::<Name>().unwrap();
-
-        let record = Record::<4>::builder()
-            .set_reference_sequence_name("sq0")
-            .set_start_position(noodles_core::Position::try_from(8).unwrap())
-            .set_end_position(noodles_core::Position::try_from(13).unwrap())
-            .set_name("ndls1".parse::<Name>().unwrap())
-            .build()
-            .unwrap();
-
-        let result = record_to_string(BedType::Wrapper4(record)).unwrap();
-        let expected = "sq0\t7\t13\tndls1\n";
-
         assert_eq!(&result, expected);
     }
 

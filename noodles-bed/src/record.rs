@@ -29,63 +29,12 @@ type Block = (usize, usize);
 
 use serde_with::{serde_as, DisplayFromStr};
 
-pub enum BedType {
-    Wrapper3(Record<3>),
-    Wrapper4(Record<4>),
-    Wrapper5(Record<5>),
-    Wrapper6(Record<6>),
-    Wrapper7(Record<7>),
-    Wrapper8(Record<8>),
-    Wrapper9(Record<9>),
-    Wrapper12(Record<12>),
-}
-
-impl fmt::Display for BedType {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match &self {
-            BedType::Wrapper3(inner) => write!(f, "{}", inner),
-            BedType::Wrapper4(inner) => write!(f, "{}", inner),
-            BedType::Wrapper5(inner) => write!(f, "{}", inner),
-            BedType::Wrapper6(inner) => write!(f, "{}", inner),
-            BedType::Wrapper7(inner) => write!(f, "{}", inner),
-            BedType::Wrapper8(inner) => write!(f, "{}", inner),
-            BedType::Wrapper9(inner) => write!(f, "{}", inner),
-            BedType::Wrapper12(inner) => write!(f, "{}", inner),
-        }
-    }
-}
-
-impl FromStr for BedType {
-    type Err = ParseError;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        // We can't infer which bed record is,
-        // unless we check how many \t there are in the first line
-        // which... may be the best option we have,
-        // but it feels like a weird solution
-
-        let bed_record_type = s.matches("\t").count() + 1;
-
-        match bed_record_type {
-            3 => Ok(BedType::Wrapper3(s.parse::<Record<3>>()?)),
-            4 => Ok(BedType::Wrapper4(s.parse::<Record<4>>()?)),
-            5 => Ok(BedType::Wrapper5(s.parse::<Record<5>>()?)),
-            6 => Ok(BedType::Wrapper6(s.parse::<Record<6>>()?)),
-            7 => Ok(BedType::Wrapper7(s.parse::<Record<7>>()?)),
-            8 => Ok(BedType::Wrapper8(s.parse::<Record<8>>()?)),
-            9 => Ok(BedType::Wrapper9(s.parse::<Record<9>>()?)),
-            12 => Ok(BedType::Wrapper12(s.parse::<Record<12>>()?)),
-            _ => unreachable!(),
-        }
-    }
-}
-
 // TODO: impl Record<N>
 #[serde_as]
 #[derive(Deserialize, Serialize)]
 pub struct AuxiliarBedRecordWrapper {
     #[serde_as(as = "DisplayFromStr")]
-    pub record: BedType,
+    pub record: Record<3>,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
