@@ -32,64 +32,10 @@ use serde_with::{serde_as, DisplayFromStr};
 // TODO: impl Record<N>
 #[serde_as]
 #[derive(Deserialize, Serialize)]
-pub struct AuxiliarBedRecordWrapper<const N: u8> {
+pub struct AuxiliarBedRecordWrapper {
     #[serde_as(as = "DisplayFromStr")]
-    pub record: Record<N>,
+    pub record: Record<3>,
 }
-
-// impl<const N: u8> AuxiliarBedRecordWrapper<N> {}
-
-impl<const N: u8> fmt::Display for Record<N> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            3 => {
-                <Self as Record<3>>::format_bed_3_fields(f, self)?;
-                format_optional_fields(f, Record::<3>::optional_fields(&self))?;
-                Ok(())
-            }
-            4 => {
-                format_bed_4_fields(f, self)?;
-                format_optional_fields(f, self.optional_fields())?;
-                Ok(())
-            }
-            5 => {
-                format_bed_5_fields(f, self)?;
-                format_optional_fields(f, self.optional_fields())?;
-                Ok(())
-            }
-            6 => {
-                format_bed_6_fields(f, self)?;
-                format_optional_fields(f, self.optional_fields())?;
-                Ok(())
-            }
-            7 => {
-                format_bed_7_fields(f, self)?;
-                format_optional_fields(f, self.optional_fields())?;
-                Ok(())
-            }
-            8 => {
-                format_bed_8_fields(f, self)?;
-                format_optional_fields(f, self.optional_fields())?;
-                Ok(())
-            }
-            9 => {
-                format_bed_9_fields(f, self)?;
-                format_optional_fields(f, self.optional_fields())?;
-                Ok(())
-            }
-            12 => {
-                format_bed_12_fields(f, self)?;
-                format_optional_fields(f, self.optional_fields())?;
-                Ok(())
-            }
-            _ => unreachable!(),
-        }
-    }
-}
-
-// impl<const N: u8> Display for Record<N>
-//     Self: BedN<4>,
-// {
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 struct StandardFields {
@@ -552,6 +498,70 @@ where
     }
 }
 
+impl fmt::Display for Record<3> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        format_bed_3_fields(f, self)?;
+        format_optional_fields(f, self.optional_fields())?;
+        Ok(())
+    }
+}
+
+impl fmt::Display for Record<4> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        format_bed_4_fields(f, self)?;
+        format_optional_fields(f, self.optional_fields())?;
+        Ok(())
+    }
+}
+
+impl fmt::Display for Record<5> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        format_bed_5_fields(f, self)?;
+        format_optional_fields(f, self.optional_fields())?;
+        Ok(())
+    }
+}
+
+impl fmt::Display for Record<6> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        format_bed_6_fields(f, self)?;
+        format_optional_fields(f, self.optional_fields())?;
+        Ok(())
+    }
+}
+
+impl fmt::Display for Record<7> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        format_bed_7_fields(f, self)?;
+        format_optional_fields(f, self.optional_fields())?;
+        Ok(())
+    }
+}
+
+impl fmt::Display for Record<8> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        format_bed_8_fields(f, self)?;
+        format_optional_fields(f, self.optional_fields())?;
+        Ok(())
+    }
+}
+
+impl fmt::Display for Record<9> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        format_bed_9_fields(f, self)?;
+        format_optional_fields(f, self.optional_fields())?;
+        Ok(())
+    }
+}
+
+impl fmt::Display for Record<12> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        format_bed_12_fields(f, self)?;
+        format_optional_fields(f, self.optional_fields())?;
+        Ok(())
+    }
+}
+
 fn format_bed_3_fields<const N: u8>(f: &mut fmt::Formatter<'_>, record: &Record<N>) -> fmt::Result
 where
     Record<N>: BedN<3>,
@@ -574,6 +584,7 @@ where
     format_bed_3_fields(f, record)?;
 
     f.write_char(DELIMITER)?;
+
     if let Some(name) = record.name() {
         write!(f, "{}", name)
     } else {
