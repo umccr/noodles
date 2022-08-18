@@ -29,12 +29,25 @@ type Block = (usize, usize);
 
 use serde_with::{serde_as, DisplayFromStr};
 
-// TODO: impl Record<N>
+// enum BedRecord
+
+// // TODO: impl Record<N>
+// #[serde_as]
+// #[derive(Deserialize, Serialize)]
+// pub struct AuxiliarBedRecordWrapper<const N: u8> {
+//     #[serde_as(as = "DisplayFromStr")]
+//     pub record: Record<N>,
+// }
+
 #[serde_as]
 #[derive(Deserialize, Serialize)]
-pub struct AuxiliarBedRecordWrapper {
+pub struct AuxiliarBedRecordWrapper<T>
+where
+    T: BedN<3> + std::str::FromStr + fmt::Display,
+    <T as std::str::FromStr>::Err: std::fmt::Display,
+{
     #[serde_as(as = "DisplayFromStr")]
-    pub record: Record<3>,
+    pub record: T,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]

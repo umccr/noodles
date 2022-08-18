@@ -2,7 +2,7 @@ use serde::{ser, Serialize};
 
 use crate::{
     error::{Error, Result},
-    record::AuxiliarBedRecordWrapper,
+    record::{AuxiliarBedRecordWrapper, BedN},
     Record,
 };
 
@@ -24,8 +24,12 @@ where
 }
 
 // And that we should restrict the types that have access to the to_string() inner function
-pub fn vec_record_to_string(vec: Vec<Record<3>>) -> Result<String> {
-    let input: Vec<AuxiliarBedRecordWrapper> = vec
+pub fn vec_record_to_string<T>(vec: Vec<T>) -> Result<String>
+where
+    T: BedN<3> + std::str::FromStr + std::fmt::Display,
+    <T as std::str::FromStr>::Err: std::fmt::Display,
+{
+    let input: Vec<AuxiliarBedRecordWrapper<T>> = vec
         .into_iter()
         .map(|record| AuxiliarBedRecordWrapper { record })
         .collect();
@@ -33,7 +37,11 @@ pub fn vec_record_to_string(vec: Vec<Record<3>>) -> Result<String> {
     to_string(&input)
 }
 
-pub fn record_to_string(record: Record<3>) -> Result<String> {
+pub fn record_to_string<T>(record: T) -> Result<String>
+where
+    T: BedN<3> + std::str::FromStr + std::fmt::Display,
+    <T as std::str::FromStr>::Err: std::fmt::Display,
+{
     let abrw = AuxiliarBedRecordWrapper { record };
     to_string(&abrw)
 }
@@ -358,7 +366,7 @@ impl<'a> ser::SerializeStructVariant for &'a mut Record3Serializer {
 }
 #[cfg(test)]
 mod serde_tests {
-    use crate::Record;
+    use crate::{record::Name, Record};
 
     use super::*;
 
@@ -397,6 +405,22 @@ mod serde_tests {
 
         let result = vec_record_to_string(input).unwrap();
         let expected = "sq0\t7\t13\nsq1\t13\t18\n";
+        assert_eq!(&result, expected);
+    }
+
+    #[test]
+    fn test_to_string_single_auxiliar_bed_record_4_wrapper() {
+        let record = Record::<4>::builder()
+            .set_reference_sequence_name("sq0")
+            .set_start_position(noodles_core::Position::try_from(8).unwrap())
+            .set_end_position(noodles_core::Position::try_from(13).unwrap())
+            .set_name("ndls1".parse::<Name>().unwrap())
+            .build()
+            .unwrap();
+
+        let result = record_to_string(record).unwrap();
+        let expected = "sq0\t7\t13\tndls1\n";
+
         assert_eq!(&result, expected);
     }
 
