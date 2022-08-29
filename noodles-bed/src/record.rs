@@ -39,16 +39,23 @@ use serde_with::{serde_as, DisplayFromStr};
 //     pub record: Record<N>,
 // }
 
+// #[serde_as]
+// #[derive(Deserialize, Serialize)]
+// pub struct AuxiliarBedRecordWrapper<T>
+// where
+//     T: BedN<3> + std::str::FromStr + fmt::Display,
+//     <T as std::str::FromStr>::Err: std::fmt::Display,
+// {
+//     #[serde_as(as = "DisplayFromStr")]
+//     pub record: T,
+// }
+
 #[serde_as]
 #[derive(Deserialize, Serialize)]
-pub struct AuxiliarBedRecordWrapper<T>
+pub struct AuxiliarBedRecordWrapper<T>(#[serde_as(as = "DisplayFromStr")] pub T)
 where
     T: BedN<3> + std::str::FromStr + fmt::Display,
-    <T as std::str::FromStr>::Err: std::fmt::Display,
-{
-    #[serde_as(as = "DisplayFromStr")]
-    pub record: T,
-}
+    <T as std::str::FromStr>::Err: std::fmt::Display;
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 struct StandardFields {
@@ -1461,6 +1468,28 @@ mod tests {
             .unwrap();
 
         assert_eq!(actual, expected);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_something() -> Result<(), noodles_core::position::TryFromIntError> {
+        // TODO: solve thick_start and thick_end default on serde
+        //       (on the lib it uses start and end, we set up to be 1 for now.)
+        let actual: AuxiliarBedRecordWrapper<Record<3>> = serde_json::from_str(
+            r#"{"chrom":"sq0","start":8,"end":13,"thick_start":8,"thick_end":13}"#,
+        )
+        .unwrap();
+
+        let expected = Record::<3>::builder()
+            .set_reference_sequence_name("sq0")
+            .set_start_position(Position::try_from(8).unwrap())
+            .set_end_position(Position::try_from(13).unwrap())
+            .build()
+            .unwrap();
+
+        let expected = AuxiliarBedRecordWrapper(expected);
+        assert_eq!(actual.0, expected.0);
 
         Ok(())
     }

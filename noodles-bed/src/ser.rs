@@ -31,7 +31,7 @@ where
 {
     let input: Vec<AuxiliarBedRecordWrapper<T>> = vec
         .into_iter()
-        .map(|record| AuxiliarBedRecordWrapper { record })
+        .map(|record| AuxiliarBedRecordWrapper(record))
         .collect();
 
     to_string(&input)
@@ -42,7 +42,7 @@ where
     T: BedN<3> + std::str::FromStr + std::fmt::Display,
     <T as std::str::FromStr>::Err: std::fmt::Display,
 {
-    let abrw = AuxiliarBedRecordWrapper { record };
+    let abrw = AuxiliarBedRecordWrapper(record);
     to_string(&abrw)
 }
 
@@ -238,7 +238,9 @@ impl<'a> ser::SerializeSeq for &'a mut Record3Serializer {
     where
         T: ?Sized + Serialize,
     {
-        value.serialize(&mut **self)
+        value.serialize(&mut **self);
+        self.output += "\n";
+        Ok(())
     }
 
     fn end(self) -> Result<()> {
@@ -380,7 +382,7 @@ mod serde_tests {
             .unwrap();
 
         let result = record_to_string(record).unwrap();
-        let expected = "sq0\t7\t13\n";
+        let expected = "sq0\t7\t13";
 
         assert_eq!(&result, expected);
     }
@@ -419,7 +421,7 @@ mod serde_tests {
             .unwrap();
 
         let result = record_to_string(record).unwrap();
-        let expected = "sq0\t7\t13\tndls1\n";
+        let expected = "sq0\t7\t13\tndls1";
 
         assert_eq!(&result, expected);
     }

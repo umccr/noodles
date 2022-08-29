@@ -61,6 +61,21 @@ impl<'de> RecordDeserializer<'de> {
         //     }),
         // }
     }
+
+    fn parse_string(&mut self) -> &'de str {
+        match self.input.find('\n') {
+            Some(len) => {
+                let s = &self.input[..len];
+                self.input = &self.input[len + 1..];
+                s
+            }
+            None => {
+                let s = &self.input[..];
+                self.input = "";
+                s
+            }
+        }
+    }
 }
 
 impl<'de, 'a> de::Deserializer<'de> for &'a mut RecordDeserializer<'de> {
@@ -101,7 +116,8 @@ impl<'de, 'a> de::Deserializer<'de> for &'a mut RecordDeserializer<'de> {
         V: Visitor<'de>,
     {
         dbg!("map");
-        visitor.visit_map(self)
+        // visitor.visit_map(self)
+        visitor.visit_seq(self)
     }
 
     // fn deserialize_string<V>(self, visitor: V) -> Result<V::Value>
@@ -122,16 +138,28 @@ impl<'de, 'a> de::Deserializer<'de> for &'a mut RecordDeserializer<'de> {
         V: Visitor<'de>,
     {
         dbg!("identifier");
-        self.deserialize_string(visitor)
+        // self.deserialize_string(visitor)
+        // self.deserialize_str(visitor)
+        visitor.visit_str("record")
+    }
+
+    // Refer to the "Understanding deserializer lifetimes" page for information
+    // about the three deserialization flavors of strings in Serde.
+    fn deserialize_str<V>(self, visitor: V) -> Result<V::Value>
+    where
+        V: Visitor<'de>,
+    {
+        visitor.visit_borrowed_str(self.parse_string())
     }
 
     fn deserialize_ignored_any<V>(self, visitor: V) -> Result<V::Value>
     where
         V: Visitor<'de>,
     {
-        dbg!(self.input);
-        dbg!("deserialize_ignored_any");
-        drop(self.input);
+        // dbg!(self.input);
+        // dbg!("deserialize_ignored_any");
+        // drop(self.input);
+        self.parse_string();
         // panic!(); // uncomment to stop loop
         visitor.visit_unit()
     }
@@ -143,9 +171,16 @@ impl<'de, 'a> de::Deserializer<'de> for &'a mut RecordDeserializer<'de> {
     //       tuple_struct map enum identifier ignored_any
     // }
 
+    fn deserialize_newtype_struct<V>(self, _name: &'static str, visitor: V) -> Result<V::Value>
+    where
+        V: Visitor<'de>,
+    {
+        visitor.visit_newtype_struct(self)
+    }
+
     forward_to_deserialize_any! {
-          bool i8 i16 i32 i64 i128 u8 u16 u32 u64 u128 f32 f64 char str
-          bytes byte_buf option unit unit_struct newtype_struct tuple
+          bool i8 i16 i32 i64 i128 u8 u16 u32 u64 u128 f32 f64 char
+          bytes byte_buf option unit unit_struct tuple
           tuple_struct enum
     }
 }
@@ -368,7 +403,7 @@ mod serde_tests {
 
         // let expected = AuxiliarBedRecordWrapper { record };
         let result: AuxiliarBedRecordWrapper<Record<3>> = from_str(input).unwrap();
-        let result_2 = result.record;
+        let result_2 = result.0;
 
         assert_eq!(result_2, record);
     }
