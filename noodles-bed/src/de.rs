@@ -24,6 +24,24 @@ where
 //     from_str(&abrw)
 // }
 
+pub fn record_from_str<'a, T>(s: &'a str) -> Result<T>
+where
+    T: BedN<3> + std::str::FromStr + std::fmt::Display,
+    <T as std::str::FromStr>::Err: std::fmt::Display,
+{
+    let abrw: AuxiliarBedRecordWrapper<T> = from_str(s)?;
+    Ok(abrw.0)
+}
+
+pub fn vec_record_from_str<'a, T>(s: &'a str) -> Result<Vec<T>>
+where
+    T: BedN<3> + std::str::FromStr + std::fmt::Display,
+    <T as std::str::FromStr>::Err: std::fmt::Display,
+{
+    let abrw_vec: Vec<AuxiliarBedRecordWrapper<T>> = from_str(s)?;
+    Ok(abrw_vec.into_iter().map(|wrap| wrap.0).collect())
+}
+
 pub fn from_str<'a, T>(s: &'a str) -> Result<T>
 where
     T: Deserialize<'a>,
@@ -193,7 +211,11 @@ impl<'de> SeqAccess<'de> for RecordDeserializer<'de> {
     where
         T: DeserializeSeed<'de>,
     {
-        seed.deserialize(&mut *self).map(Some)
+        if self.input == "" {
+            Ok(None)
+        } else {
+            seed.deserialize(&mut *self).map(Some)
+        }
     }
 
     // fn next_element<T>(&mut self) -> Result<Option<T>>
@@ -393,18 +415,37 @@ mod serde_tests {
     #[test]
     fn test_from_string_single_auxiliar_bed_record_wrapper() {
         let input = "sq0\t7\t13\n";
+        let result: Record<3> = record_from_str(input).unwrap();
 
-        let record = Record::<3>::builder()
+        let expected = Record::<3>::builder()
             .set_reference_sequence_name("sq0")
             .set_start_position(noodles_core::Position::try_from(8).unwrap())
             .set_end_position(noodles_core::Position::try_from(13).unwrap())
             .build()
             .unwrap();
 
-        // let expected = AuxiliarBedRecordWrapper { record };
-        let result: AuxiliarBedRecordWrapper<Record<3>> = from_str(input).unwrap();
-        let result_2 = result.0;
+        assert_eq!(result, expected);
+    }
 
-        assert_eq!(result_2, record);
+    #[test]
+    fn test_from_string_multiple_auxiliar_bed_record_wrapper() {
+        let input = "sq0\t7\t13\nsq1\t13\t18\n";
+        let result: Vec<Record<3>> = vec_record_from_str(input).unwrap();
+
+        let record1 = Record::<3>::builder()
+            .set_reference_sequence_name("sq0")
+            .set_start_position(noodles_core::Position::try_from(8).unwrap())
+            .set_end_position(noodles_core::Position::try_from(13).unwrap())
+            .build()
+            .unwrap();
+        let record2 = Record::<3>::builder()
+            .set_reference_sequence_name("sq1")
+            .set_start_position(noodles_core::Position::try_from(14).unwrap())
+            .set_end_position(noodles_core::Position::try_from(18).unwrap())
+            .build()
+            .unwrap();
+        let expected = vec![record1, record2];
+
+        assert_eq!(result, expected);
     }
 }
