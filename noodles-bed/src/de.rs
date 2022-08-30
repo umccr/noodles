@@ -448,4 +448,20 @@ mod serde_tests {
 
         assert_eq!(result, expected);
     }
+
+    #[test]
+    fn test_from_string_single_auxiliar_bed_record_4_wrapper() {
+        let input = "sq0\t7\t13\tndls1";
+        let result: Record<4> = record_from_str(input).unwrap();
+
+        let expected = Record::<4>::builder()
+            .set_reference_sequence_name("sq0")
+            .set_start_position(noodles_core::Position::try_from(8).unwrap())
+            .set_end_position(noodles_core::Position::try_from(13).unwrap())
+            .set_name("ndls1".parse::<Name>().unwrap())
+            .build()
+            .unwrap();
+
+        assert_eq!(result, expected);
+    }
 }
