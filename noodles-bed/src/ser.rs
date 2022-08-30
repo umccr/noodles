@@ -3,19 +3,16 @@ use serde::{ser, Serialize};
 use crate::{
     error::{Error, Result},
     record::{AuxiliarBedRecordWrapper, BedN},
-    Record,
 };
 
 pub struct Record3Serializer {
     output: String,
 }
 
-// I believe this function shouldn't be user facing
 fn to_string<T>(value: &T) -> Result<String>
 where
     T: Serialize,
 {
-    // TODO: How to generalize Bed<N>
     let mut serializer = Record3Serializer {
         output: String::new(),
     };
@@ -23,7 +20,6 @@ where
     Ok(serializer.output)
 }
 
-// And that we should restrict the types that have access to the to_string() inner function
 pub fn vec_record_to_string<T>(vec: Vec<T>) -> Result<String>
 where
     T: BedN<3> + std::str::FromStr + std::fmt::Display,
