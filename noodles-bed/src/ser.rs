@@ -364,7 +364,10 @@ impl<'a> ser::SerializeStructVariant for &'a mut Record3Serializer {
 }
 #[cfg(test)]
 mod serde_tests {
-    use crate::{record::Name, Record};
+    use crate::{
+        record::{Color, Name, Score, Strand},
+        Record,
+    };
 
     use super::*;
 
@@ -422,6 +425,117 @@ mod serde_tests {
         assert_eq!(&result, expected);
     }
 
+    #[test]
+    fn test_to_string_single_auxiliar_bed_record_5_wrapper() {
+        let record = Record::<5>::builder()
+            .set_reference_sequence_name("sq0")
+            .set_start_position(noodles_core::Position::try_from(8).unwrap())
+            .set_end_position(noodles_core::Position::try_from(13).unwrap())
+            .set_score(Score::try_from(21).unwrap())
+            .build()
+            .unwrap();
+
+        let result = record_to_string(record).unwrap();
+        let expected = "sq0\t7\t13\t.\t21";
+
+        assert_eq!(&result, expected);
+    }
+
+    #[test]
+    fn test_to_string_single_auxiliar_bed_record_6_wrapper() {
+        let record = Record::<6>::builder()
+            .set_reference_sequence_name("sq0")
+            .set_start_position(noodles_core::Position::try_from(8).unwrap())
+            .set_end_position(noodles_core::Position::try_from(13).unwrap())
+            .set_strand(Strand::Forward)
+            .build()
+            .unwrap();
+
+        let result = record_to_string(record).unwrap();
+        let expected = "sq0\t7\t13\t.\t0\t+";
+
+        assert_eq!(&result, expected);
+    }
+
+    #[test]
+    fn test_to_string_single_auxiliar_bed_record_7_wrapper() {
+        let start = noodles_core::Position::try_from(8).unwrap();
+
+        let record = Record::<7>::builder()
+            .set_reference_sequence_name("sq0")
+            .set_start_position(start)
+            .set_end_position(noodles_core::Position::try_from(13).unwrap())
+            .set_thick_start(start)
+            .build()
+            .unwrap();
+
+        let result = record_to_string(record).unwrap();
+        let expected = "sq0\t7\t13\t.\t0\t.\t7";
+
+        assert_eq!(&result, expected);
+    }
+
+    #[test]
+    fn test_to_string_single_auxiliar_bed_record_8_wrapper() {
+        let start = noodles_core::Position::try_from(8).unwrap();
+        let end = noodles_core::Position::try_from(13).unwrap();
+
+        let record = Record::<8>::builder()
+            .set_reference_sequence_name("sq0")
+            .set_start_position(start)
+            .set_end_position(end)
+            .set_thick_start(start)
+            .set_thick_end(end)
+            .build()
+            .unwrap();
+
+        let result = record_to_string(record).unwrap();
+        let expected = "sq0\t7\t13\t.\t0\t.\t7\t13";
+
+        assert_eq!(&result, expected);
+    }
+
+    #[test]
+    fn test_to_string_single_auxiliar_bed_record_9_wrapper() {
+        let start = noodles_core::Position::try_from(8).unwrap();
+        let end = noodles_core::Position::try_from(13).unwrap();
+
+        let record = Record::<9>::builder()
+            .set_reference_sequence_name("sq0")
+            .set_start_position(start)
+            .set_end_position(end)
+            .set_thick_start(start)
+            .set_thick_end(end)
+            .set_color(Color::RED)
+            .build()
+            .unwrap();
+
+        let result = record_to_string(record).unwrap();
+        let expected = "sq0\t7\t13\t.\t0\t.\t7\t13\t255,0,0";
+
+        assert_eq!(&result, expected);
+    }
+
+    #[test]
+    fn test_to_string_single_auxiliar_bed_record_12_wrapper() {
+        let start = noodles_core::Position::try_from(8).unwrap();
+        let end = noodles_core::Position::try_from(13).unwrap();
+
+        let record = Record::<12>::builder()
+            .set_reference_sequence_name("sq0")
+            .set_start_position(start)
+            .set_end_position(end)
+            .set_thick_start(start)
+            .set_thick_end(end)
+            .set_blocks(vec![(0, 2)])
+            .build()
+            .unwrap();
+
+        let result = record_to_string(record).unwrap();
+        let expected = "sq0\t7\t13\t.\t0\t.\t7\t13\t0\t1\t2\t0";
+
+        assert_eq!(&result, expected);
+    }
     // TODO
     // #[test]
     // fn test_to_bytes_single_record() { }

@@ -124,7 +124,10 @@ impl<'de> SeqAccess<'de> for RecordDeserializer<'de> {
 
 #[cfg(test)]
 mod serde_tests {
-    use crate::{record::Name, Record};
+    use crate::{
+        record::{Color, Name, Score, Strand},
+        Record,
+    };
 
     use super::*;
 
@@ -175,6 +178,118 @@ mod serde_tests {
             .set_start_position(noodles_core::Position::try_from(8).unwrap())
             .set_end_position(noodles_core::Position::try_from(13).unwrap())
             .set_name("ndls1".parse::<Name>().unwrap())
+            .build()
+            .unwrap();
+
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn test_to_string_single_auxiliar_bed_record_5_wrapper() {
+        let input = "sq0\t7\t13\t.\t21";
+        let result: Record<5> = record_from_str(input).unwrap();
+
+        let expected = Record::<5>::builder()
+            .set_reference_sequence_name("sq0")
+            .set_start_position(noodles_core::Position::try_from(8).unwrap())
+            .set_end_position(noodles_core::Position::try_from(13).unwrap())
+            .set_score(Score::try_from(21).unwrap())
+            .build()
+            .unwrap();
+
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn test_to_string_single_auxiliar_bed_record_6_wrapper() {
+        let input = "sq0\t7\t13\t.\t0\t+";
+        let result: Record<6> = record_from_str(input).unwrap();
+
+        let expected = Record::<6>::builder()
+            .set_reference_sequence_name("sq0")
+            .set_start_position(noodles_core::Position::try_from(8).unwrap())
+            .set_end_position(noodles_core::Position::try_from(13).unwrap())
+            .set_strand(Strand::Forward)
+            .build()
+            .unwrap();
+
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn test_to_string_single_auxiliar_bed_record_7_wrapper() {
+        let input = "sq0\t7\t13\t.\t0\t.\t7";
+        let result: Record<7> = record_from_str(input).unwrap();
+
+        let start = noodles_core::Position::try_from(8).unwrap();
+
+        let expected = Record::<7>::builder()
+            .set_reference_sequence_name("sq0")
+            .set_start_position(start)
+            .set_end_position(noodles_core::Position::try_from(13).unwrap())
+            .set_thick_start(start)
+            .build()
+            .unwrap();
+
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn test_to_string_single_auxiliar_bed_record_8_wrapper() {
+        let input = "sq0\t7\t13\t.\t0\t.\t7\t13";
+        let result: Record<8> = record_from_str(input).unwrap();
+
+        let start = noodles_core::Position::try_from(8).unwrap();
+        let end = noodles_core::Position::try_from(13).unwrap();
+
+        let expected = Record::<8>::builder()
+            .set_reference_sequence_name("sq0")
+            .set_start_position(start)
+            .set_end_position(end)
+            .set_thick_start(start)
+            .set_thick_end(end)
+            .build()
+            .unwrap();
+
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn test_to_string_single_auxiliar_bed_record_9_wrapper() {
+        let input = "sq0\t7\t13\t.\t0\t.\t7\t13\t255,0,0";
+        let result: Record<9> = record_from_str(input).unwrap();
+
+        let start = noodles_core::Position::try_from(8).unwrap();
+        let end = noodles_core::Position::try_from(13).unwrap();
+
+        let expected = Record::<9>::builder()
+            .set_reference_sequence_name("sq0")
+            .set_start_position(start)
+            .set_end_position(end)
+            .set_thick_start(start)
+            .set_thick_end(end)
+            .set_color(Color::RED)
+            .build()
+            .unwrap();
+
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn test_to_string_single_auxiliar_bed_record_12_wrapper() {
+        let input = "sq0\t7\t13\t.\t0\t.\t7\t13\t0\t1\t2\t0";
+        let result: Record<12> = record_from_str(input).unwrap();
+
+        let start = noodles_core::Position::try_from(8).unwrap();
+        let end = noodles_core::Position::try_from(13).unwrap();
+
+        let expected = Record::<12>::builder()
+            .set_reference_sequence_name("sq0")
+            .set_start_position(start)
+            .set_end_position(end)
+            .set_thick_start(start)
+            .set_thick_end(end)
+            .set_blocks(vec![(0, 2)])
             .build()
             .unwrap();
 
