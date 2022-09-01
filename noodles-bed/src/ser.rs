@@ -2,10 +2,10 @@ use serde::{ser, Serialize};
 
 use crate::{
     error::{Error, Result},
-    record::{AuxiliarBedRecordWrapper, BedN},
+    record::{BedN, SerdeRecordWrapper},
 };
 
-pub struct Record3Serializer {
+pub struct RecordSerializer {
     output: String,
 }
 
@@ -13,7 +13,7 @@ fn to_string<T>(value: &T) -> Result<String>
 where
     T: Serialize,
 {
-    let mut serializer = Record3Serializer {
+    let mut serializer = RecordSerializer {
         output: String::new(),
     };
     value.serialize(&mut serializer)?;
@@ -25,9 +25,9 @@ where
     T: BedN<3> + std::str::FromStr + std::fmt::Display,
     <T as std::str::FromStr>::Err: std::fmt::Display,
 {
-    let input: Vec<AuxiliarBedRecordWrapper<T>> = vec
+    let input: Vec<SerdeRecordWrapper<T>> = vec
         .into_iter()
-        .map(|record| AuxiliarBedRecordWrapper(record))
+        .map(|record| SerdeRecordWrapper(record))
         .collect();
 
     to_string(&input)
@@ -38,8 +38,8 @@ where
     T: BedN<3> + std::str::FromStr + std::fmt::Display,
     <T as std::str::FromStr>::Err: std::fmt::Display,
 {
-    let abrw = AuxiliarBedRecordWrapper(record);
-    to_string(&abrw)
+    let srw = SerdeRecordWrapper(record);
+    to_string(&srw)
 }
 
 pub fn to_bytes<T>(value: &T) -> Result<Vec<u8>>
@@ -50,7 +50,7 @@ where
     Ok(string.as_bytes().to_vec())
 }
 
-impl<'a> ser::Serializer for &'a mut Record3Serializer {
+impl<'a> ser::Serializer for &'a mut RecordSerializer {
     type Ok = ();
     type Error = Error;
     type SerializeSeq = Self;
@@ -134,8 +134,6 @@ impl<'a> ser::Serializer for &'a mut Record3Serializer {
         value.serialize(self)
     }
 
-    // TODO: check all unorthodox serialization decisions
-    //     (maybe unexpected data serializations should return an error)
     fn serialize_unit(self) -> Result<()> {
         self.output += "null";
         Ok(())
@@ -178,7 +176,6 @@ impl<'a> ser::Serializer for &'a mut Record3Serializer {
         Ok(self)
     }
 
-    // TODO: `blocks` field uses this, make a test with it
     fn serialize_tuple(self, _len: usize) -> Result<Self::SerializeTuple> {
         Ok(self)
     }
@@ -226,7 +223,7 @@ impl<'a> ser::Serializer for &'a mut Record3Serializer {
     }
 }
 
-impl<'a> ser::SerializeSeq for &'a mut Record3Serializer {
+impl<'a> ser::SerializeSeq for &'a mut RecordSerializer {
     type Ok = ();
     type Error = Error;
 
@@ -234,7 +231,7 @@ impl<'a> ser::SerializeSeq for &'a mut Record3Serializer {
     where
         T: ?Sized + Serialize,
     {
-        value.serialize(&mut **self);
+        value.serialize(&mut **self)?;
         self.output += "\n";
         Ok(())
     }
@@ -244,7 +241,7 @@ impl<'a> ser::SerializeSeq for &'a mut Record3Serializer {
     }
 }
 
-impl<'a> ser::SerializeTuple for &'a mut Record3Serializer {
+impl<'a> ser::SerializeTuple for &'a mut RecordSerializer {
     type Ok = ();
     type Error = Error;
 
@@ -264,7 +261,7 @@ impl<'a> ser::SerializeTuple for &'a mut Record3Serializer {
     }
 }
 
-impl<'a> ser::SerializeTupleStruct for &'a mut Record3Serializer {
+impl<'a> ser::SerializeTupleStruct for &'a mut RecordSerializer {
     type Ok = ();
     type Error = Error;
 
@@ -280,7 +277,7 @@ impl<'a> ser::SerializeTupleStruct for &'a mut Record3Serializer {
     }
 }
 
-impl<'a> ser::SerializeTupleVariant for &'a mut Record3Serializer {
+impl<'a> ser::SerializeTupleVariant for &'a mut RecordSerializer {
     type Ok = ();
     type Error = Error;
 
@@ -296,7 +293,7 @@ impl<'a> ser::SerializeTupleVariant for &'a mut Record3Serializer {
     }
 }
 
-impl<'a> ser::SerializeMap for &'a mut Record3Serializer {
+impl<'a> ser::SerializeMap for &'a mut RecordSerializer {
     type Ok = ();
     type Error = Error;
 
@@ -323,7 +320,7 @@ impl<'a> ser::SerializeMap for &'a mut Record3Serializer {
     }
 }
 
-impl<'a> ser::SerializeStruct for &'a mut Record3Serializer {
+impl<'a> ser::SerializeStruct for &'a mut RecordSerializer {
     type Ok = ();
     type Error = Error;
 
@@ -343,7 +340,7 @@ impl<'a> ser::SerializeStruct for &'a mut Record3Serializer {
     }
 }
 
-impl<'a> ser::SerializeStructVariant for &'a mut Record3Serializer {
+impl<'a> ser::SerializeStructVariant for &'a mut RecordSerializer {
     type Ok = ();
     type Error = Error;
 
@@ -536,10 +533,4 @@ mod serde_tests {
 
         assert_eq!(&result, expected);
     }
-    // TODO
-    // #[test]
-    // fn test_to_bytes_single_record() { }
-
-    // #[test]
-    // fn test_to_bytes_vec_record() { }
 }

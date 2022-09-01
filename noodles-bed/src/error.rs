@@ -1,4 +1,3 @@
-use std;
 use std::fmt::{self, Display};
 use std::io;
 use std::io::ErrorKind;

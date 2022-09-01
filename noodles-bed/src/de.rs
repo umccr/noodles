@@ -1,6 +1,5 @@
-// use crate::de::RecordState::ExpectingChrom;
 use crate::error;
-use crate::record::{AuxiliarBedRecordWrapper, BedN};
+use crate::record::{BedN, SerdeRecordWrapper};
 use error::{Error, Result};
 use serde::de::{DeserializeSeed, SeqAccess, Visitor};
 use serde::{de, forward_to_deserialize_any, Deserialize};
@@ -22,25 +21,25 @@ where
     }
 }
 
-pub fn record_from_str<'a, T>(s: &'a str) -> Result<T>
+pub fn record_from_str<T>(s: &str) -> Result<T>
 where
     T: BedN<3> + std::str::FromStr + std::fmt::Display,
     <T as std::str::FromStr>::Err: std::fmt::Display,
 {
-    let abrw: AuxiliarBedRecordWrapper<T> = from_str(s)?;
-    Ok(abrw.0)
+    let srw: SerdeRecordWrapper<T> = from_str(s)?;
+    Ok(srw.0)
 }
 
-pub fn vec_record_from_str<'a, T>(s: &'a str) -> Result<Vec<T>>
+pub fn vec_record_from_str<T>(s: &str) -> Result<Vec<T>>
 where
     T: BedN<3> + std::str::FromStr + std::fmt::Display,
     <T as std::str::FromStr>::Err: std::fmt::Display,
 {
-    let abrw_vec: Vec<AuxiliarBedRecordWrapper<T>> = from_str(s)?;
-    Ok(abrw_vec.into_iter().map(|wrap| wrap.0).collect())
+    let srw_vec: Vec<SerdeRecordWrapper<T>> = from_str(s)?;
+    Ok(srw_vec.into_iter().map(|wrap| wrap.0).collect())
 }
 
-pub fn from_bytes<'a, T>(records: &'a [u8]) -> Result<T>
+pub fn from_bytes<'a, T>(_records: &'a [u8]) -> Result<T>
 where
     T: Deserialize<'a>,
 {
@@ -60,7 +59,7 @@ impl<'de> RecordDeserializer<'de> {
                 s
             }
             None => {
-                let s = &self.input[..];
+                let s = self.input;
                 self.input = "";
                 s
             }
@@ -75,10 +74,9 @@ impl<'de, 'a> de::Deserializer<'de> for &'a mut RecordDeserializer<'de> {
     where
         V: Visitor<'de>,
     {
-        unimplemented!()
+        unreachable!()
     }
 
-    /// We will likely need to handle deserializing a sequence.
     fn deserialize_seq<V>(self, visitor: V) -> Result<V::Value>
     where
         V: Visitor<'de>,
@@ -114,7 +112,7 @@ impl<'de> SeqAccess<'de> for RecordDeserializer<'de> {
     where
         T: DeserializeSeed<'de>,
     {
-        if self.input == "" {
+        if self.input.is_empty() {
             Ok(None)
         } else {
             seed.deserialize(&mut *self).map(Some)

@@ -14,9 +14,9 @@ fn main() {
     println!("\n Testing Vec of json: \n{:#?}", records);
 
     // For the BED file format representation of a bed::Record, we need to implement our own Deserializer.
-    // let record = b"sq0\t7\t13\nsq0\t20\t34\n";
-    // let record: Record<3> = from_bytes(record).unwrap();
-    // println!("{:#?}", record);
+    let record = "sq0\t7\t13\nsq0\t20\t34\n";
+    let record: Record<3> = noodles_bed::record_from_str(record).unwrap();
+    println!("{:#?}", record);
 
     // Serialization is similar, if we want the JSON representation, we can use the serde_json Serializer.
     let record = Record::<3>::builder()
@@ -35,9 +35,5 @@ fn main() {
         .build()
         .unwrap();
 
-    // // maybe it should be possible to NOT borrow
-    // println!("{:#?}", to_bytes(record).unwrap());
-
     println!("{:#?}", noodles_bed::record_to_string(record).unwrap());
-    // println!("{:#?}", to_bytes(&record).unwrap());
 }

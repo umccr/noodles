@@ -13,6 +13,6 @@ mod de;
 mod error;
 mod ser;
 
-pub use de::{from_bytes, RecordDeserializer};
+pub use de::{from_bytes, record_from_str, vec_record_from_str, RecordDeserializer};
 pub use error::{Error, Result};
-pub use ser::{record_to_string, to_bytes, vec_record_to_string, Record3Serializer};
+pub use ser::{record_to_string, to_bytes, vec_record_to_string, RecordSerializer};
