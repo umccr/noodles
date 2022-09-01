@@ -61,57 +61,53 @@ impl<'a> ser::Serializer for &'a mut RecordSerializer {
     type SerializeStruct = Self;
     type SerializeStructVariant = Self;
 
-    fn serialize_bool(self, v: bool) -> Result<()> {
-        self.output += if v { "true" } else { "false" };
-        Ok(())
+    fn serialize_bool(self, _v: bool) -> Result<()> {
+        unreachable!()
     }
 
-    fn serialize_i8(self, v: i8) -> Result<()> {
-        self.serialize_i64(i64::from(v))
+    fn serialize_i8(self, _v: i8) -> Result<()> {
+        unreachable!()
     }
 
-    fn serialize_i16(self, v: i16) -> Result<()> {
-        self.serialize_i64(i64::from(v))
+    fn serialize_i16(self, _v: i16) -> Result<()> {
+        unreachable!()
     }
 
-    fn serialize_i32(self, v: i32) -> Result<()> {
-        self.serialize_i64(i64::from(v))
+    fn serialize_i32(self, _v: i32) -> Result<()> {
+        unreachable!()
     }
 
     // TODO: maybe use the `itoa` crate for performance.
-    fn serialize_i64(self, v: i64) -> Result<()> {
-        self.output += &v.to_string();
-        Ok(())
+    fn serialize_i64(self, _v: i64) -> Result<()> {
+        unreachable!()
     }
 
-    fn serialize_u8(self, v: u8) -> Result<()> {
-        self.serialize_u64(u64::from(v))
+    fn serialize_u8(self, _v: u8) -> Result<()> {
+        unreachable!()
     }
 
-    fn serialize_u16(self, v: u16) -> Result<()> {
-        self.serialize_u64(u64::from(v))
+    fn serialize_u16(self, _v: u16) -> Result<()> {
+        unreachable!()
     }
 
-    fn serialize_u32(self, v: u32) -> Result<()> {
-        self.serialize_u64(u64::from(v))
+    fn serialize_u32(self, _v: u32) -> Result<()> {
+        unreachable!()
     }
 
-    fn serialize_u64(self, v: u64) -> Result<()> {
-        self.output += &v.to_string();
-        Ok(())
+    fn serialize_u64(self, _v: u64) -> Result<()> {
+        unreachable!()
     }
 
-    fn serialize_f32(self, v: f32) -> Result<()> {
-        self.serialize_f64(f64::from(v))
+    fn serialize_f32(self, _v: f32) -> Result<()> {
+        unreachable!()
     }
 
-    fn serialize_f64(self, v: f64) -> Result<()> {
-        self.output += &v.to_string();
-        Ok(())
+    fn serialize_f64(self, _v: f64) -> Result<()> {
+        unreachable!()
     }
 
-    fn serialize_char(self, v: char) -> Result<()> {
-        self.serialize_str(v.encode_utf8(&mut [0; 4]))
+    fn serialize_char(self, _v: char) -> Result<()> {
+        unreachable!()
     }
 
     fn serialize_str(self, v: &str) -> Result<()> {
@@ -120,36 +116,35 @@ impl<'a> ser::Serializer for &'a mut RecordSerializer {
     }
 
     fn serialize_bytes(self, _v: &[u8]) -> Result<()> {
-        unimplemented!();
+        unreachable!()
     }
 
     fn serialize_none(self) -> Result<()> {
-        self.serialize_unit()
+        unreachable!()
     }
 
-    fn serialize_some<T>(self, value: &T) -> Result<()>
+    fn serialize_some<T>(self, _value: &T) -> Result<()>
     where
         T: ?Sized + Serialize,
     {
-        value.serialize(self)
+        unreachable!()
     }
 
     fn serialize_unit(self) -> Result<()> {
-        self.output += "null";
-        Ok(())
+        unreachable!()
     }
 
     fn serialize_unit_struct(self, _name: &'static str) -> Result<()> {
-        self.serialize_unit()
+        unreachable!()
     }
 
     fn serialize_unit_variant(
         self,
         _name: &'static str,
         _variant_index: u32,
-        variant: &'static str,
+        _variant: &'static str,
     ) -> Result<()> {
-        self.serialize_str(variant)
+        unreachable!()
     }
 
     fn serialize_newtype_struct<T>(self, _name: &'static str, value: &T) -> Result<()>
@@ -164,12 +159,12 @@ impl<'a> ser::Serializer for &'a mut RecordSerializer {
         _name: &'static str,
         _variant_index: u32,
         _variant: &'static str,
-        value: &T,
+        _value: &T,
     ) -> Result<()>
     where
         T: ?Sized + Serialize,
     {
-        value.serialize(self)
+        unreachable!()
     }
 
     fn serialize_seq(self, _len: Option<usize>) -> Result<Self::SerializeSeq> {
@@ -177,49 +172,43 @@ impl<'a> ser::Serializer for &'a mut RecordSerializer {
     }
 
     fn serialize_tuple(self, _len: usize) -> Result<Self::SerializeTuple> {
-        Ok(self)
+        unreachable!()
     }
 
     fn serialize_tuple_struct(
         self,
         _name: &'static str,
-        len: usize,
+        _len: usize,
     ) -> Result<Self::SerializeTupleStruct> {
-        self.serialize_seq(Some(len))
+        unreachable!()
     }
 
     fn serialize_tuple_variant(
         self,
         _name: &'static str,
         _variant_index: u32,
-        variant: &'static str,
+        _variant: &'static str,
         _len: usize,
     ) -> Result<Self::SerializeTupleVariant> {
-        self.output += "{";
-        variant.serialize(&mut *self)?;
-        self.output += ":[";
-        Ok(self)
+        unreachable!()
     }
 
     fn serialize_map(self, _len: Option<usize>) -> Result<Self::SerializeMap> {
-        Ok(self)
+        unreachable!()
     }
 
     fn serialize_struct(self, _name: &'static str, _len: usize) -> Result<Self::SerializeStruct> {
-        Ok(self)
+        unreachable!()
     }
 
     fn serialize_struct_variant(
         self,
         _name: &'static str,
         _variant_index: u32,
-        variant: &'static str,
+        _variant: &'static str,
         _len: usize,
     ) -> Result<Self::SerializeStructVariant> {
-        self.output += "{";
-        variant.serialize(&mut *self)?;
-        self.output += ":{";
-        Ok(self)
+        unreachable!()
     }
 }
 
@@ -245,19 +234,15 @@ impl<'a> ser::SerializeTuple for &'a mut RecordSerializer {
     type Ok = ();
     type Error = Error;
 
-    fn serialize_element<T>(&mut self, value: &T) -> Result<()>
+    fn serialize_element<T>(&mut self, _value: &T) -> Result<()>
     where
         T: ?Sized + Serialize,
     {
-        if !self.output.ends_with('(') {
-            self.output += ",";
-        }
-        value.serialize(&mut **self)
+        unreachable!()
     }
 
     fn end(self) -> Result<()> {
-        self.output += ")";
-        Ok(())
+        unreachable!()
     }
 }
 
@@ -265,15 +250,15 @@ impl<'a> ser::SerializeTupleStruct for &'a mut RecordSerializer {
     type Ok = ();
     type Error = Error;
 
-    fn serialize_field<T>(&mut self, value: &T) -> Result<()>
+    fn serialize_field<T>(&mut self, _value: &T) -> Result<()>
     where
         T: ?Sized + Serialize,
     {
-        value.serialize(&mut **self)
+        unreachable!()
     }
 
     fn end(self) -> Result<()> {
-        Ok(())
+        unreachable!()
     }
 }
 
@@ -281,15 +266,15 @@ impl<'a> ser::SerializeTupleVariant for &'a mut RecordSerializer {
     type Ok = ();
     type Error = Error;
 
-    fn serialize_field<T>(&mut self, value: &T) -> Result<()>
+    fn serialize_field<T>(&mut self, _value: &T) -> Result<()>
     where
         T: ?Sized + Serialize,
     {
-        value.serialize(&mut **self)
+        unreachable!()
     }
 
     fn end(self) -> Result<()> {
-        Ok(())
+        unreachable!()
     }
 }
 
@@ -301,22 +286,18 @@ impl<'a> ser::SerializeMap for &'a mut RecordSerializer {
     where
         T: ?Sized + Serialize,
     {
-        if !self.output.is_empty() && !self.output.ends_with('\n') {
-            self.output += "\t";
-        }
-        Ok(())
+        unreachable!()
     }
 
-    fn serialize_value<T>(&mut self, value: &T) -> Result<()>
+    fn serialize_value<T>(&mut self, _value: &T) -> Result<()>
     where
         T: ?Sized + Serialize,
     {
-        value.serialize(&mut **self)
+        unreachable!()
     }
 
     fn end(self) -> Result<()> {
-        self.output += "\n";
-        Ok(())
+        unreachable!()
     }
 }
 
@@ -324,19 +305,15 @@ impl<'a> ser::SerializeStruct for &'a mut RecordSerializer {
     type Ok = ();
     type Error = Error;
 
-    fn serialize_field<T>(&mut self, _key: &'static str, value: &T) -> Result<()>
+    fn serialize_field<T>(&mut self, _key: &'static str, _value: &T) -> Result<()>
     where
         T: ?Sized + Serialize,
     {
-        if !self.output.is_empty() && !self.output.ends_with('\n') {
-            self.output += "\t";
-        }
-        value.serialize(&mut **self)
+        unreachable!()
     }
 
     fn end(self) -> Result<()> {
-        self.output += "\n";
-        Ok(())
+        unreachable!()
     }
 }
 
@@ -344,21 +321,18 @@ impl<'a> ser::SerializeStructVariant for &'a mut RecordSerializer {
     type Ok = ();
     type Error = Error;
 
-    fn serialize_field<T>(&mut self, _key: &'static str, value: &T) -> Result<()>
+    fn serialize_field<T>(&mut self, _key: &'static str, _value: &T) -> Result<()>
     where
         T: ?Sized + Serialize,
     {
-        if !self.output.is_empty() && !self.output.ends_with('\n') {
-            self.output += "\t";
-        }
-        value.serialize(&mut **self)
+        unreachable!()
     }
 
     fn end(self) -> Result<()> {
-        self.output += "\t";
-        Ok(())
+        unreachable!()
     }
 }
+
 #[cfg(test)]
 mod serde_tests {
     use crate::{
