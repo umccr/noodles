@@ -2,7 +2,7 @@ use crate::error;
 use crate::record::{BedN, SerdeRecordWrapper};
 use error::{Error, Result};
 use serde::de::{DeserializeSeed, SeqAccess, Visitor};
-use serde::{de, forward_to_deserialize_any, Deserialize};
+use serde::{de, forward_to_deserialize_any, ser, Deserialize};
 
 pub struct RecordDeserializer<'de> {
     input: &'de str,
@@ -12,12 +12,12 @@ fn from_str<'a, T>(s: &'a str) -> Result<T>
 where
     T: Deserialize<'a>,
 {
-    let mut deserializer = RecordDeserializer::from_str(s);
+    let mut deserializer = RecordDeserializer::from(s);
     let t = T::deserialize(&mut deserializer)?;
     if deserializer.input.is_empty() {
         Ok(t)
     } else {
-        panic!()
+        Err(ser::Error::custom("trailing characters"))
     }
 }
 
@@ -46,11 +46,13 @@ where
     todo!()
 }
 
-impl<'de> RecordDeserializer<'de> {
-    pub fn from_str(input: &'de str) -> Self {
+impl<'de> From<&'de str> for RecordDeserializer<'de> {
+    fn from(input: &'de str) -> Self {
         RecordDeserializer { input }
     }
+}
 
+impl<'de> RecordDeserializer<'de> {
     fn parse_string(&mut self) -> &'de str {
         match self.input.find('\n') {
             Some(len) => {
@@ -74,7 +76,7 @@ impl<'de, 'a> de::Deserializer<'de> for &'a mut RecordDeserializer<'de> {
     where
         V: Visitor<'de>,
     {
-        unreachable!()
+        unimplemented!()
     }
 
     fn deserialize_seq<V>(self, visitor: V) -> Result<V::Value>
