@@ -18,6 +18,7 @@ use std::{
 
 use noodles_core::Position;
 use serde::{Deserialize, Serialize};
+use serde_with::{serde_as, DisplayFromStr};
 
 const DELIMITER: char = '\t';
 const MISSING_STRING: &str = ".";
@@ -25,18 +26,46 @@ const MISSING_NUMBER: &str = "0";
 
 type Block = (usize, usize);
 
+/// This wrapper exists in order to allow a Record<N> struct
+/// to be serialized and deserialized, in each Record<N> version
+/// using their respective `Display` and `FromStr` traits
+/// as part of the serde process.
+#[serde_as]
+#[derive(Deserialize, Serialize)]
+pub struct SerdeRecordWrapper<T>(#[serde_as(as = "DisplayFromStr")] pub T)
+where
+    T: BedN<3> + std::str::FromStr + fmt::Display,
+    <T as std::str::FromStr>::Err: std::fmt::Display;
+
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 struct StandardFields {
+    #[serde(rename = "chrom")]
     reference_sequence_name: String,
+    #[serde(rename = "start")]
     start_position: Position,
+    #[serde(rename = "end")]
     end_position: Position,
+    #[serde(default)]
     name: Option<Name>,
+    #[serde(default)]
     score: Option<Score>,
+    #[serde(default)]
     strand: Option<Strand>,
+    // Could use serde_state (https://docs.rs/serde_state/0.4.8/serde_state/index.html) to deserialize
+    // thick_start and thick_end with the same logic as the `new` function, as the value depends on
+    // start_position and end_position.
+    #[serde(default = "default_position")]
     thick_start: Position,
+    #[serde(default = "default_position")]
     thick_end: Position,
+    #[serde(default)]
     color: Option<Color>,
+    #[serde(default)]
     blocks: Vec<Block>,
+}
+
+fn default_position() -> Position {
+    Position::new(1).unwrap()
 }
 
 impl StandardFields {
@@ -109,9 +138,12 @@ mod optional_fields_tests {
 }
 
 /// A BED record.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Deserialize, Serialize)]
 pub struct Record<const N: u8> {
+    #[serde(flatten)]
     standard_fields: StandardFields,
+    // Skip for now as we can't flatten this.
+    #[serde(skip)]
     optional_fields: OptionalFields,
 }
 
@@ -1393,6 +1425,94 @@ mod tests {
         standard_fields.blocks = vec![(0, 2)];
 
         let expected = Ok(Record::new(standard_fields, OptionalFields::default()));
+
+        assert_eq!(actual, expected);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_serde_json_from_str_for_record() -> Result<(), noodles_core::position::TryFromIntError>
+    {
+        // TODO: solve thick_start and thick_end default on serde
+        //       (on the lib it uses start and end, we set up to be 1 for now.)
+        let actual: Record<3> = serde_json::from_str(
+            r#"{"chrom":"sq0","start":8,"end":13,"thick_start":8,"thick_end":13}"#,
+        )
+        .unwrap();
+
+        let expected = Record::<3>::builder()
+            .set_reference_sequence_name("sq0")
+            .set_start_position(Position::try_from(8).unwrap())
+            .set_end_position(Position::try_from(13).unwrap())
+            .build()
+            .unwrap();
+
+        assert_eq!(actual, expected);
+
+        Ok(())
+    }
+
+    #[test]
+    #[ignore] // TODO: remove, here for PR demonstration purposes
+    fn test_serde_json_from_str_for_serde_record_wrapper(
+    ) -> Result<(), noodles_core::position::TryFromIntError> {
+        // TODO: solve thick_start and thick_end default on serde
+        //       (on the lib it uses start and end, we set up to be 1 for now.)
+        let actual: SerdeRecordWrapper<Record<3>> = serde_json::from_str(
+            r#"{"chrom":"sq0","start":8,"end":13,"thick_start":8,"thick_end":13}"#,
+        )
+        .unwrap();
+
+        let expected = Record::<3>::builder()
+            .set_reference_sequence_name("sq0")
+            .set_start_position(Position::try_from(8).unwrap())
+            .set_end_position(Position::try_from(13).unwrap())
+            .build()
+            .unwrap();
+
+        let expected = SerdeRecordWrapper(expected);
+        assert_eq!(actual.0, expected.0);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_serde_json_to_string_for_record() -> Result<(), noodles_core::position::TryFromIntError>
+    {
+        // TODO: solve thick_start and thick_end default on serde
+        //       (on the lib it uses start and end, we set up to be 1 for now.)
+        let record = Record::<3>::builder()
+            .set_reference_sequence_name("sq0")
+            .set_start_position(Position::new(8).unwrap())
+            .set_end_position(Position::new(13).unwrap())
+            .build()
+            .unwrap();
+        let actual = serde_json::to_string(&record).unwrap();
+
+        let expected = r#"{"chrom":"sq0","start":8,"end":13,"name":null,"score":null,"strand":null,"thick_start":8,"thick_end":13,"color":null,"blocks":[]}"#;
+
+        assert_eq!(actual, expected);
+
+        Ok(())
+    }
+
+    #[test]
+    #[ignore] // TODO: remove, here for PR demonstration purposes
+    fn test_serde_json_to_string_for_serde_record_wrapper(
+    ) -> Result<(), noodles_core::position::TryFromIntError> {
+        // TODO: solve thick_start and thick_end default on serde
+        //       (on the lib it uses start and end, we set up to be 1 for now.)
+
+        let record = Record::<3>::builder()
+            .set_reference_sequence_name("sq0")
+            .set_start_position(Position::try_from(8).unwrap())
+            .set_end_position(Position::try_from(13).unwrap())
+            .build()
+            .unwrap();
+        let actual = serde_json::to_string(&SerdeRecordWrapper(record)).unwrap();
+
+        let expected = r#"{"chrom":"sq0","start":8,"end":13,"thick_start":8,"thick_end":13}"#;
 
         assert_eq!(actual, expected);
 

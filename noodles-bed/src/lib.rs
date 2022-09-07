@@ -6,13 +6,13 @@ mod reader;
 pub mod record;
 mod writer;
 
-pub use self::{reader::Reader, record::Record, writer::Writer}; 
+pub use self::{reader::Reader, record::Record, writer::Writer};
 
 // SerDe
 mod de;
 mod error;
 mod ser;
 
-//pub use de::{from_str, Deserializer};
+pub use de::{from_bytes, record_from_str, vec_record_from_str, RecordDeserializer};
 pub use error::{Error, Result};
-pub use ser::{to_string, Serializer};
+pub use ser::{record_to_string, to_bytes, vec_record_to_string, RecordSerializer};
