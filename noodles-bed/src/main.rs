@@ -1,12 +1,34 @@
-use crate::bioserde::{json_bed_to_noodles_bed, noodles_bed_to_json_bed};
+use crate::bioserde::{
+    convert_to_format, json_bed_to_noodles_bed, noodles_bed_to_json_bed, SupportedFormat,
+};
 use noodles_bed::Record;
 use noodles_core::Position;
 
 mod bioserde {
     use noodles_bed::Record;
 
-    // TODO: check if this signature still makes sense
-    // pub fn convert_serde_format(format_one, format_two)
+    pub enum SupportedFormat {
+        Record3,
+        JsonBed3,
+    }
+
+    pub fn convert_to_format(input: &str, from: SupportedFormat, to: SupportedFormat) -> String {
+        let record = match from {
+            SupportedFormat::Record3 => {
+                let record: Record<3> = noodles_bed::record_from_str(input).unwrap();
+                record
+            }
+            SupportedFormat::JsonBed3 => {
+                let record: Record<3> = serde_json::from_str(input).unwrap();
+                record
+            }
+        };
+
+        match to {
+            SupportedFormat::Record3 => noodles_bed::record_to_string(record).unwrap(),
+            SupportedFormat::JsonBed3 => serde_json::to_string(&record).unwrap(),
+        }
+    }
 
     /// A function that receives a string in the noodles-bedrepresentation,
     /// deserialize to a Record<3>, and reserialize to a json-bed representation
@@ -29,7 +51,7 @@ mod bioserde {
     }
 
     #[cfg(test)]
-    mod serde_tests {
+    mod bioserde_tests {
         use super::*;
 
         #[test]
@@ -45,6 +67,26 @@ mod bioserde {
         fn test_noodles_bed_to_json_bed() {
             let input = "sq0\t7\t13";
             let result = noodles_bed_to_json_bed(input);
+
+            let expected = r#"{"chrom":"sq0","start":8,"end":13,"name":null,"score":null,"strand":null,"thick_start":8,"thick_end":13,"color":null,"blocks":[]}"#;
+            assert_eq!(&result, expected);
+        }
+
+        #[test]
+        fn test_json_bed_to_noodles_bed_with_enum_usage() {
+            let input = r#"{"chrom":"sq0","start":8,"end":13}"#;
+            let result =
+                convert_to_format(input, SupportedFormat::JsonBed3, SupportedFormat::Record3);
+
+            let expected = "sq0\t7\t13";
+            assert_eq!(&result, expected);
+        }
+
+        #[test]
+        fn test_noodles_bed_to_json_bed_with_enum_usage() {
+            let input = "sq0\t7\t13";
+            let result =
+                convert_to_format(input, SupportedFormat::Record3, SupportedFormat::JsonBed3);
 
             let expected = r#"{"chrom":"sq0","start":8,"end":13,"name":null,"score":null,"strand":null,"thick_start":8,"thick_end":13,"color":null,"blocks":[]}"#;
             assert_eq!(&result, expected);
@@ -69,8 +111,6 @@ fn main() {
     // let record: Record<3> = noodles_bed::record_from_str(record).unwrap();
     let record: Record<3> = noodles_bed::record_from_str(record).unwrap();
     println!("{:#?}", record);
-
-    // TODO: check this.
 
     // For the BED file format representation of a bed::Record, we need to implement our own Deserializer.
     let record = "sq0\t7\t13\nsq0\t20\t34\n";
@@ -123,6 +163,22 @@ fn main() {
     let result = noodles_bed_to_json_bed(input);
     println!(
         "noodles_bed_to_json_bed: input: {:?}, result: {:?}",
+        input, result
+    );
+
+    let input = r#"{"chrom":"sq0","start":8,"end":13}"#;
+    let result = convert_to_format(input, SupportedFormat::JsonBed3, SupportedFormat::Record3);
+
+    println!(
+        "convert_to_format: input: {:?}, result: {:?}",
+        input, result
+    );
+
+    let input = "sq0\t7\t13";
+    let result = convert_to_format(input, SupportedFormat::Record3, SupportedFormat::JsonBed3);
+
+    println!(
+        "convert_to_format: input: {:?}, result: {:?}",
         input, result
     );
 }
