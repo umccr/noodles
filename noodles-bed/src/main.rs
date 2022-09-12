@@ -9,24 +9,26 @@ mod bioserde {
 
     pub enum SupportedFormat {
         Record3,
+        Record4,
         JsonBed3,
+        JsonBed4,
     }
 
     pub fn convert_to_format(input: &str, from: SupportedFormat, to: SupportedFormat) -> String {
         let record = match from {
-            SupportedFormat::Record3 => {
-                let record: Record<3> = noodles_bed::record_from_str(input).unwrap();
-                record
-            }
-            SupportedFormat::JsonBed3 => {
-                let record: Record<3> = serde_json::from_str(input).unwrap();
-                record
-            }
+            SupportedFormat::Record3 => noodles_bed::record_from_str::<Record<3>>(input).unwrap(),
+            SupportedFormat::Record4 => noodles_bed::record_from_str::<Record<4>>(input).unwrap(),
+            SupportedFormat::JsonBed3 => serde_json::from_str::<Record<3>>(input).unwrap(),
+            SupportedFormat::JsonBed4 => serde_json::from_str::<Record<4>>(input).unwrap(),
         };
 
         match to {
-            SupportedFormat::Record3 => noodles_bed::record_to_string(record).unwrap(),
-            SupportedFormat::JsonBed3 => serde_json::to_string(&record).unwrap(),
+            SupportedFormat::Record3 | SupportedFormat::Record4 => {
+                noodles_bed::record_to_string(record).unwrap()
+            }
+            SupportedFormat::JsonBed3 | SupportedFormat::JsonBed4 => {
+                serde_json::to_string(&record).unwrap()
+            }
         }
     }
 
