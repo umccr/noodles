@@ -9,13 +9,20 @@ pub struct RecordSerializer {
     output: String,
 }
 
+impl RecordSerializer {
+    pub fn new() -> Self {
+        RecordSerializer {
+            output: String::new(),
+        }
+    }
+}
+
 fn to_string<T>(value: &T) -> Result<String>
 where
     T: Serialize,
 {
-    let mut serializer = RecordSerializer {
-        output: String::new(),
-    };
+    let mut serializer = RecordSerializer::new();
+
     value.serialize(&mut serializer)?;
     Ok(serializer.output)
 }
