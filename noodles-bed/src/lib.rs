@@ -15,4 +15,5 @@ mod ser;
 
 pub use de::{from_bytes, record_from_str, vec_record_from_str, RecordDeserializer};
 pub use error::{Error, Result};
-pub use ser::{record_to_string, to_bytes, vec_record_to_string, RecordSerializer};
+// pub use ser::{record_to_string, to_bytes, vec_record_to_string, RecordSerializer};
+pub use ser::{to_bytes, RecordSerializer};

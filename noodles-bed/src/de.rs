@@ -4,6 +4,98 @@ use error::{Error, Result};
 use serde::de::{DeserializeSeed, SeqAccess, Visitor};
 use serde::{de, forward_to_deserialize_any, ser, Deserialize};
 
+// /// This leeps track of the state associated with the next record that is parsed.
+// /// We need to keep track of the state as records are returned whole from the iterator, whereas
+// /// the deserializer progresses one field at a time.
+// enum RecordState {
+//     ExpectingChrom,
+//     ExpectingChromStart(Record<3>),
+//     ExpectingChromEnd(Record<3>),
+// }
+
+// /// The Record Deserializer. This struct implements Deserializer and associated Traits. It stores
+// /// an iterator over the records that are given to it.
+// pub struct Record3Deserializer<I>
+// where
+//     I: Iterator<Item = io::Result<Record<3>>>,
+// {
+//     records: Peekable<I>,
+//     state: RecordState,
+// }
+
+// impl<I> Record3Deserializer<I>
+// where
+//     I: Iterator<Item = io::Result<Record<3>>>,
+// {
+//     fn new(records: I) -> Self {
+//         Self {
+//             records: records.peekable(),
+//             state: ExpectingChrom,
+//         }
+//     }
+// }
+
+// impl<'de, 'a, I> Deserializer<'de> for &'a mut Record3Deserializer<I>
+// where
+//     I: Iterator<Item = io::Result<Record<3>>>,
+// {
+//     type Error = Error;
+
+//     /// This function could handle deserializing an individual record, matching the deserializer's
+//     /// RecordState, and progressing it to the next state.
+//     fn deserialize_any<V>(self, visitor: V) -> Result<V::Value>
+//     where
+//         V: Visitor<'de>,
+//     {
+//         todo!()
+//     }
+
+//     /// We will likely need to handle deserializing a sequence.
+//     fn deserialize_seq<V>(self, visitor: V) -> Result<V::Value>
+//     where
+//         V: Visitor<'de>,
+//     {
+//         visitor.visit_seq(self)
+//     }
+
+//     /// We also need to deserialize a struct in a similar way, as the BED
+//     /// format doesn't have a concept of a struct. It just processes records
+//     /// line by line similar to CSV, where fields are separated by some separator.
+//     fn deserialize_struct<V>(
+//         self,
+//         name: &'static str,
+//         fields: &'static [&'static str],
+//         visitor: V,
+//     ) -> Result<V::Value>
+//     where
+//         V: Visitor<'de>,
+//     {
+//         visitor.visit_seq(self)
+//     }
+
+//     /// We can probably use forward_to_deserialize_any for many types, as bed Records are self-describing.
+//     forward_to_deserialize_any! {
+//           bool i8 i16 i32 i64 i128 u8 u16 u32 u64 u128 f32 f64 char str string
+//           bytes byte_buf option unit unit_struct newtype_struct tuple
+//           tuple_struct map enum identifier ignored_any
+//     }
+// }
+
+// /// SeqAccess will be needed to deserialize sequences and structs.
+// impl<'de, I> SeqAccess<'de> for Record3Deserializer<I>
+// where
+//     I: Iterator<Item = io::Result<Record<3>>>,
+// {
+//     type Error = Error;
+
+//     fn next_element_seed<T>(&mut self, seed: T) -> Result<Option<T::Value>>
+//     where
+//         T: DeserializeSeed<'de>,
+//     {
+//         todo!()
+//     }
+// }
+
 pub struct RecordDeserializer<'de> {
     input: &'de str,
 }
@@ -185,7 +277,7 @@ mod serde_tests {
     }
 
     #[test]
-    fn test_to_string_single_auxiliar_bed_record_5_wrapper() {
+    fn test_from_str_single_auxiliar_bed_record_5_wrapper() {
         let input = "sq0\t7\t13\t.\t21";
         let result: Record<5> = record_from_str(input).unwrap();
 
@@ -201,7 +293,7 @@ mod serde_tests {
     }
 
     #[test]
-    fn test_to_string_single_auxiliar_bed_record_6_wrapper() {
+    fn test_from_str_single_auxiliar_bed_record_6_wrapper() {
         let input = "sq0\t7\t13\t.\t0\t+";
         let result: Record<6> = record_from_str(input).unwrap();
 
@@ -217,7 +309,7 @@ mod serde_tests {
     }
 
     #[test]
-    fn test_to_string_single_auxiliar_bed_record_7_wrapper() {
+    fn test_from_str_single_auxiliar_bed_record_7_wrapper() {
         let input = "sq0\t7\t13\t.\t0\t.\t7";
         let result: Record<7> = record_from_str(input).unwrap();
 
@@ -235,7 +327,7 @@ mod serde_tests {
     }
 
     #[test]
-    fn test_to_string_single_auxiliar_bed_record_8_wrapper() {
+    fn test_from_str_single_auxiliar_bed_record_8_wrapper() {
         let input = "sq0\t7\t13\t.\t0\t.\t7\t13";
         let result: Record<8> = record_from_str(input).unwrap();
 
@@ -255,7 +347,7 @@ mod serde_tests {
     }
 
     #[test]
-    fn test_to_string_single_auxiliar_bed_record_9_wrapper() {
+    fn test_from_str_single_auxiliar_bed_record_9_wrapper() {
         let input = "sq0\t7\t13\t.\t0\t.\t7\t13\t255,0,0";
         let result: Record<9> = record_from_str(input).unwrap();
 
@@ -276,7 +368,7 @@ mod serde_tests {
     }
 
     #[test]
-    fn test_to_string_single_auxiliar_bed_record_12_wrapper() {
+    fn test_from_str_single_auxiliar_bed_record_12_wrapper() {
         let input = "sq0\t7\t13\t.\t0\t.\t7\t13\t0\t1\t2\t0";
         let result: Record<12> = record_from_str(input).unwrap();
 
