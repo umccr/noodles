@@ -9,38 +9,45 @@ pub struct RecordSerializer {
     output: String,
 }
 
+impl RecordSerializer {
+    pub fn new() -> Self {
+        RecordSerializer {
+            output: String::new(),
+        }
+    }
+}
+
 fn to_string<T>(value: &T) -> Result<String>
 where
     T: Serialize,
 {
-    let mut serializer = RecordSerializer {
-        output: String::new(),
-    };
+    let mut serializer = RecordSerializer::new();
+
     value.serialize(&mut serializer)?;
     Ok(serializer.output)
 }
 
-pub fn vec_record_to_string<T>(vec: Vec<T>) -> Result<String>
-where
-    T: BedN<3> + std::str::FromStr + std::fmt::Display,
-    <T as std::str::FromStr>::Err: std::fmt::Display,
-{
-    let input: Vec<SerdeRecordWrapper<T>> = vec
-        .into_iter()
-        .map(|record| SerdeRecordWrapper(record))
-        .collect();
+// pub fn vec_record_to_string<T>(vec: Vec<T>) -> Result<String>
+// where
+//     T: BedN<3> + std::str::FromStr + std::fmt::Display,
+//     <T as std::str::FromStr>::Err: std::fmt::Display,
+// {
+//     let input: Vec<SerdeRecordWrapper<T>> = vec
+//         .into_iter()
+//         .map(|record| SerdeRecordWrapper(record))
+//         .collect();
 
-    to_string(&input)
-}
+//     to_string(&input)
+// }
 
-pub fn record_to_string<T>(record: T) -> Result<String>
-where
-    T: BedN<3> + std::str::FromStr + std::fmt::Display,
-    <T as std::str::FromStr>::Err: std::fmt::Display,
-{
-    let srw = SerdeRecordWrapper(record);
-    to_string(&srw)
-}
+// pub fn record_to_string<T>(record: T) -> Result<String>
+// where
+//     T: BedN<3> + std::str::FromStr + std::fmt::Display,
+//     <T as std::str::FromStr>::Err: std::fmt::Display,
+// {
+//     let srw = SerdeRecordWrapper(record);
+//     to_string(&srw)
+// }
 
 pub fn to_bytes<T>(value: &T) -> Result<Vec<u8>>
 where
@@ -61,53 +68,57 @@ impl<'a> ser::Serializer for &'a mut RecordSerializer {
     type SerializeStruct = Self;
     type SerializeStructVariant = Self;
 
-    fn serialize_bool(self, _v: bool) -> Result<()> {
-        unimplemented!()
+    fn serialize_bool(self, v: bool) -> Result<()> {
+        self.output += if v { "true" } else { "false" };
+        Ok(())
     }
 
-    fn serialize_i8(self, _v: i8) -> Result<()> {
-        unimplemented!()
+    fn serialize_i8(self, v: i8) -> Result<()> {
+        self.serialize_i64(i64::from(v))
     }
 
-    fn serialize_i16(self, _v: i16) -> Result<()> {
-        unimplemented!()
+    fn serialize_i16(self, v: i16) -> Result<()> {
+        self.serialize_i64(i64::from(v))
     }
 
-    fn serialize_i32(self, _v: i32) -> Result<()> {
-        unimplemented!()
+    fn serialize_i32(self, v: i32) -> Result<()> {
+        self.serialize_i64(i64::from(v))
     }
 
     // TODO: maybe use the `itoa` crate for performance.
-    fn serialize_i64(self, _v: i64) -> Result<()> {
-        unimplemented!()
+    fn serialize_i64(self, v: i64) -> Result<()> {
+        self.output += &v.to_string();
+        Ok(())
     }
 
-    fn serialize_u8(self, _v: u8) -> Result<()> {
-        unimplemented!()
+    fn serialize_u8(self, v: u8) -> Result<()> {
+        self.serialize_u64(u64::from(v))
     }
 
-    fn serialize_u16(self, _v: u16) -> Result<()> {
-        unimplemented!()
+    fn serialize_u16(self, v: u16) -> Result<()> {
+        self.serialize_u64(u64::from(v))
     }
 
-    fn serialize_u32(self, _v: u32) -> Result<()> {
-        unimplemented!()
+    fn serialize_u32(self, v: u32) -> Result<()> {
+        self.serialize_u64(u64::from(v))
     }
 
-    fn serialize_u64(self, _v: u64) -> Result<()> {
-        unimplemented!()
+    fn serialize_u64(self, v: u64) -> Result<()> {
+        self.output += &v.to_string();
+        Ok(())
     }
 
-    fn serialize_f32(self, _v: f32) -> Result<()> {
-        unimplemented!()
+    fn serialize_f32(self, v: f32) -> Result<()> {
+        self.serialize_f64(f64::from(v))
     }
 
-    fn serialize_f64(self, _v: f64) -> Result<()> {
-        unimplemented!()
+    fn serialize_f64(self, v: f64) -> Result<()> {
+        self.output += &v.to_string();
+        Ok(())
     }
 
-    fn serialize_char(self, _v: char) -> Result<()> {
-        unimplemented!()
+    fn serialize_char(self, v: char) -> Result<()> {
+        self.serialize_str(v.encode_utf8(&mut [0; 4]))
     }
 
     fn serialize_str(self, v: &str) -> Result<()> {
@@ -116,35 +127,38 @@ impl<'a> ser::Serializer for &'a mut RecordSerializer {
     }
 
     fn serialize_bytes(self, _v: &[u8]) -> Result<()> {
-        unimplemented!()
+        unimplemented!();
     }
 
     fn serialize_none(self) -> Result<()> {
-        unimplemented!()
+        self.serialize_unit()
     }
 
-    fn serialize_some<T>(self, _value: &T) -> Result<()>
+    fn serialize_some<T>(self, value: &T) -> Result<()>
     where
         T: ?Sized + Serialize,
     {
-        unimplemented!()
+        value.serialize(self)
     }
 
+    // TODO: check all unorthodox serialization decisions
+    //     (maybe unexpected data serializations should return an error)
     fn serialize_unit(self) -> Result<()> {
-        unimplemented!()
+        self.output += "null";
+        Ok(())
     }
 
     fn serialize_unit_struct(self, _name: &'static str) -> Result<()> {
-        unimplemented!()
+        self.serialize_unit()
     }
 
     fn serialize_unit_variant(
         self,
         _name: &'static str,
         _variant_index: u32,
-        _variant: &'static str,
+        variant: &'static str,
     ) -> Result<()> {
-        unimplemented!()
+        self.serialize_str(variant)
     }
 
     fn serialize_newtype_struct<T>(self, _name: &'static str, value: &T) -> Result<()>
@@ -159,56 +173,63 @@ impl<'a> ser::Serializer for &'a mut RecordSerializer {
         _name: &'static str,
         _variant_index: u32,
         _variant: &'static str,
-        _value: &T,
+        value: &T,
     ) -> Result<()>
     where
         T: ?Sized + Serialize,
     {
-        unimplemented!()
+        value.serialize(self)
     }
 
     fn serialize_seq(self, _len: Option<usize>) -> Result<Self::SerializeSeq> {
         Ok(self)
     }
 
+    // TODO: `blocks` field uses this, make a test with it
     fn serialize_tuple(self, _len: usize) -> Result<Self::SerializeTuple> {
-        unimplemented!()
+        Ok(self)
     }
 
     fn serialize_tuple_struct(
         self,
         _name: &'static str,
-        _len: usize,
+        len: usize,
     ) -> Result<Self::SerializeTupleStruct> {
-        unimplemented!()
+        self.serialize_seq(Some(len))
     }
 
     fn serialize_tuple_variant(
         self,
         _name: &'static str,
         _variant_index: u32,
-        _variant: &'static str,
+        variant: &'static str,
         _len: usize,
     ) -> Result<Self::SerializeTupleVariant> {
-        unimplemented!()
+        self.output += "{";
+        variant.serialize(&mut *self)?;
+        self.output += ":[";
+        Ok(self)
     }
 
     fn serialize_map(self, _len: Option<usize>) -> Result<Self::SerializeMap> {
-        unimplemented!()
+        Ok(self)
     }
 
     fn serialize_struct(self, _name: &'static str, _len: usize) -> Result<Self::SerializeStruct> {
-        unimplemented!()
+        Ok(self)
     }
 
     fn serialize_struct_variant(
         self,
         _name: &'static str,
         _variant_index: u32,
-        _variant: &'static str,
+        variant: &'static str,
         _len: usize,
     ) -> Result<Self::SerializeStructVariant> {
-        unimplemented!()
+        self.output += "{";
+        variant.serialize(&mut *self)?;
+        self.output += ":{";
+        Ok(self)
     }
 }
 
@@ -220,9 +241,7 @@ impl<'a> ser::SerializeSeq for &'a mut RecordSerializer {
     where
         T: ?Sized + Serialize,
     {
-        value.serialize(&mut **self)?;
-        self.output += "\n";
-        Ok(())
+        value.serialize(&mut **self)
     }
 
     fn end(self) -> Result<()> {
@@ -234,15 +253,19 @@ impl<'a> ser::SerializeTuple for &'a mut RecordSerializer {
     type Ok = ();
     type Error = Error;
 
-    fn serialize_element<T>(&mut self, _value: &T) -> Result<()>
+    fn serialize_element<T>(&mut self, value: &T) -> Result<()>
     where
         T: ?Sized + Serialize,
     {
-        unimplemented!()
+        if !self.output.ends_with('(') {
+            self.output += ",";
+        }
+        value.serialize(&mut **self)
     }
 
     fn end(self) -> Result<()> {
-        unimplemented!()
+        self.output += ")";
+        Ok(())
     }
 }
 
@@ -250,15 +273,15 @@ impl<'a> ser::SerializeTupleStruct for &'a mut RecordSerializer {
     type Ok = ();
     type Error = Error;
 
-    fn serialize_field<T>(&mut self, _value: &T) -> Result<()>
+    fn serialize_field<T>(&mut self, value: &T) -> Result<()>
     where
         T: ?Sized + Serialize,
     {
-        unimplemented!()
+        value.serialize(&mut **self)
     }
 
     fn end(self) -> Result<()> {
-        unimplemented!()
+        Ok(())
     }
 }
 
@@ -266,15 +289,15 @@ impl<'a> ser::SerializeTupleVariant for &'a mut RecordSerializer {
     type Ok = ();
     type Error = Error;
 
-    fn serialize_field<T>(&mut self, _value: &T) -> Result<()>
+    fn serialize_field<T>(&mut self, value: &T) -> Result<()>
     where
         T: ?Sized + Serialize,
     {
-        unimplemented!()
+        value.serialize(&mut **self)
     }
 
     fn end(self) -> Result<()> {
-        unimplemented!()
+        Ok(())
     }
 }
 
@@ -286,18 +309,22 @@ impl<'a> ser::SerializeMap for &'a mut RecordSerializer {
     where
         T: ?Sized + Serialize,
     {
-        unimplemented!()
+        if !self.output.is_empty() && !self.output.ends_with('\n') {
+            self.output += "\t";
+        }
+        Ok(())
     }
 
-    fn serialize_value<T>(&mut self, _value: &T) -> Result<()>
+    fn serialize_value<T>(&mut self, value: &T) -> Result<()>
     where
         T: ?Sized + Serialize,
     {
-        unimplemented!()
+        value.serialize(&mut **self)
     }
 
     fn end(self) -> Result<()> {
-        unimplemented!()
+        self.output += "\n";
+        Ok(())
     }
 }
 
@@ -305,15 +332,19 @@ impl<'a> ser::SerializeStruct for &'a mut RecordSerializer {
     type Ok = ();
     type Error = Error;
 
-    fn serialize_field<T>(&mut self, _key: &'static str, _value: &T) -> Result<()>
+    fn serialize_field<T>(&mut self, _key: &'static str, value: &T) -> Result<()>
     where
         T: ?Sized + Serialize,
     {
-        unimplemented!()
+        if !self.output.is_empty() && !self.output.ends_with('\n') {
+            self.output += "\t";
+        }
+        value.serialize(&mut **self)
     }
 
     fn end(self) -> Result<()> {
-        unimplemented!()
+        self.output += "\t";
+        Ok(())
     }
 }
 
@@ -321,15 +352,19 @@ impl<'a> ser::SerializeStructVariant for &'a mut RecordSerializer {
     type Ok = ();
     type Error = Error;
 
-    fn serialize_field<T>(&mut self, _key: &'static str, _value: &T) -> Result<()>
+    fn serialize_field<T>(&mut self, _key: &'static str, value: &T) -> Result<()>
     where
         T: ?Sized + Serialize,
     {
-        unimplemented!()
+        if !self.output.is_empty() && !self.output.ends_with('\n') {
+            self.output += "\t";
+        }
+        value.serialize(&mut **self)
     }
 
     fn end(self) -> Result<()> {
-        unimplemented!()
+        self.output += "\t";
+        Ok(())
     }
 }
 
@@ -351,14 +386,14 @@ mod serde_tests {
             .build()
             .unwrap();
 
-        let result = record_to_string(record).unwrap();
+        let result = to_string(&record).unwrap();
         let expected = "sq0\t7\t13";
 
         assert_eq!(&result, expected);
     }
 
     #[test]
-    fn test_to_string_multiple_auxiliar_bed_record_wrapper() {
+    fn test_to_string_multiple_auxiliar_bed_record_3_wrapper() {
         let record1 = Record::<3>::builder()
             .set_reference_sequence_name("sq0")
             .set_start_position(noodles_core::Position::try_from(8).unwrap())
@@ -375,7 +410,7 @@ mod serde_tests {
 
         let input = vec![record1, record2];
 
-        let result = vec_record_to_string(input).unwrap();
+        let result = to_string(&input).unwrap();
         let expected = "sq0\t7\t13\nsq1\t13\t18\n";
         assert_eq!(&result, expected);
     }
@@ -390,7 +425,7 @@ mod serde_tests {
             .build()
             .unwrap();
 
-        let result = record_to_string(record).unwrap();
+        let result = to_string(&record).unwrap();
         let expected = "sq0\t7\t13\tndls1";
 
         assert_eq!(&result, expected);
@@ -406,7 +441,7 @@ mod serde_tests {
             .build()
             .unwrap();
 
-        let result = record_to_string(record).unwrap();
+        let result = to_string(&record).unwrap();
         let expected = "sq0\t7\t13\t.\t21";
 
         assert_eq!(&result, expected);
@@ -422,7 +457,7 @@ mod serde_tests {
             .build()
             .unwrap();
 
-        let result = record_to_string(record).unwrap();
+        let result = to_string(&record).unwrap();
         let expected = "sq0\t7\t13\t.\t0\t+";
 
         assert_eq!(&result, expected);
@@ -440,7 +475,7 @@ mod serde_tests {
             .build()
             .unwrap();
 
-        let result = record_to_string(record).unwrap();
+        let result = to_string(&record).unwrap();
         let expected = "sq0\t7\t13\t.\t0\t.\t7";
 
         assert_eq!(&result, expected);
@@ -460,7 +495,7 @@ mod serde_tests {
             .build()
             .unwrap();
 
-        let result = record_to_string(record).unwrap();
+        let result = to_string(&record).unwrap();
         let expected = "sq0\t7\t13\t.\t0\t.\t7\t13";
 
         assert_eq!(&result, expected);
@@ -481,7 +516,7 @@ mod serde_tests {
             .build()
             .unwrap();
 
-        let result = record_to_string(record).unwrap();
+        let result = to_string(&record).unwrap();
         let expected = "sq0\t7\t13\t.\t0\t.\t7\t13\t255,0,0";
 
         assert_eq!(&result, expected);
@@ -502,7 +537,7 @@ mod serde_tests {
             .build()
             .unwrap();
 
-        let result = record_to_string(record).unwrap();
+        let result = to_string(&record).unwrap();
         let expected = "sq0\t7\t13\t.\t0\t.\t7\t13\t0\t1\t2\t0";
 
         assert_eq!(&result, expected);
